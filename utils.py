@@ -35,6 +35,7 @@ def devs_from_vnoc(vnoc_fn="20200924_vnoc_data_dump.xlsx"):
         print(devlist)
         # This subdir must exists
         json_file_subdir = "site_json"
+        sub_dir(json_file_subdir)
         json_file_name = f"site_{s}_devlist.json"
         json_file_path = os.path.join(os.getcwd(),json_file_subdir, json_file_name)
         with open(json_file_path,"w") as f:
@@ -131,7 +132,6 @@ def main():
         print(k)
         for cmd in v:
             print(f"- {cmd}")
-
 
     cmds = cmd_dict['general_show_commands']
 
