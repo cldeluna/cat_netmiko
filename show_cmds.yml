@@ -1,3 +1,7 @@
+# Dictionary where key is "ios_show_commands" and value is a list of show commands
+general_show_commands:
+  - show hostname
+  - show version
 ios_show_commands:
   - term len 0
   - show hostname

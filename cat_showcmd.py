@@ -15,6 +15,7 @@ __license__ = "Python"
 import argparse
 import netmiko
 import os
+import utils
 
 def some_function():
     pass
