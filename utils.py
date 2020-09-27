@@ -20,6 +20,16 @@ import pandas as pd
 import json
 import os
 import re
+import add_2env
+
+
+def load_env_from_dotenv_file(path):
+    # Load the key/value pairs in the .env file as environment variables
+    if os.path.isfile(path):
+        dotenv.load_dotenv(path)
+    else:
+        print(f"ERROR! File {path} NOT FOUND! Aborting program execution...")
+        exit()
 
 
 def devs_from_vnoc(vnoc_fn="20200924_vnoc_data_dump.xlsx"):
@@ -99,8 +109,8 @@ def write_txt(filename, data):
         f.write(data)
     return f
 
-def sub_dir(output_subdir):
 
+def sub_dir(output_subdir):
     # Create target Directory if don't exist
     if not os.path.exists(output_subdir):
         os.mkdir(output_subdir)
@@ -144,6 +154,13 @@ def main():
 
     devs = read_json(json_file_path)
 
+    # Its a good practice to be explicit in code and so explicitly telling dotenv to look in the directory that contains
+    # the running script is a good idea
+    # Create an OS agnostic full path to the .env file (assuming the .env file you want is in the current working dir
+    dotenv_path = os.path.join(os.getcwd(), '.env')
+
+    load_env_from_dotenv_file(dotenv_path)
+
 
     # SAVING OUTPUT
     sub_dir("TEST")
@@ -153,7 +170,7 @@ def main():
         devdict = create_cat_devobj_from_json_list(dev)
         resp = conn_and_get_output(devdict, cmds)
         print(resp)
-        output_dir = os.path.join(os.getcwd(), output_subdir, f"{dev}.txt")
+        output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
         write_txt(output_dir, resp)
 
 # Standard call to the main() function.
@@ -164,5 +181,7 @@ if __name__ == '__main__':
     #parser.add_argument('all', help='Execute all exercises in week 4 assignment')
     parser.add_argument('-j', '--json_file', help='Name of JSON file with list of devices', action='store',
                         default="ios_test.json")
+    parser.add_argument('-o', '--output_subdir', help='Name of output subdirectory for show command files', action='store',
+                        default="TEST")
     arguments = parser.parse_args()
     main()

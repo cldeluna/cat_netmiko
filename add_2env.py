@@ -18,6 +18,7 @@ import os
 import getpass
 import pprint
 import json
+import dotenv
 
 
 # Setting environment variables via the Linux CLI
