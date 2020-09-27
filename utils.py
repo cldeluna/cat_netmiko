@@ -20,6 +20,7 @@ import pandas as pd
 import json
 import os
 import re
+import dotenv
 import add_2env
 
 
@@ -163,7 +164,7 @@ def main():
 
 
     # SAVING OUTPUT
-    sub_dir("TEST")
+    sub_dir(arguments.output_subdir)
 
     for dev in devs:
         print(f"\n\n==== Device {dev}")

@@ -2,6 +2,6 @@ test*
 .idea/
 site*
 .env
-
+__pycache__
 
 
