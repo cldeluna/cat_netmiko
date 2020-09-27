@@ -1,0 +1,32 @@
+ios_show_commands:
+  - term len 0
+  - show hostname
+  - show run
+  - show version
+  - show inventory
+  - show cdp nei
+  - show cd nei det
+  - show vlan
+  - show int
+  - show int status
+  - show int trunk
+  - show ip int br
+  - show ip arp
+  - show mac address-table
+  - show etherchannel sum
+nxos_show_commands:
+  - term len 0
+  - show hostname
+  - show run
+  - show version
+  - show inventory
+  - show cdp nei
+  - show cd nei det
+  - show vlan
+  - show int
+  - show int status
+  - show int trunk
+  - show ip int br
+  - show ip arp
+  - show mac address-table
+  - show port-channel sum
