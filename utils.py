@@ -168,13 +168,13 @@ def main():
     for dev in devs:
         print(f"\n\n==== Device {dev}")
         devdict = create_cat_devobj_from_json_list(dev)
-        if devdict['device_type'] != 'unknown':
+        if devdict['device_type'] in ['cisco_ios', 'cisco_nxos']:
             resp = conn_and_get_output(devdict, cmds)
             print(resp)
             output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
             write_txt(output_dir, resp)
         else:
-            print(f"\n\n\txxx UNKNOWN Device {dev}")
+            print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
 
 # Standard call to the main() function.
 if __name__ == '__main__':
