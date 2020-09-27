@@ -98,6 +98,15 @@ def write_txt(filename, data):
         f.write(data)
     return f
 
+def sub_dir(output_subdir):
+
+    # Create target Directory if don't exist
+    if not os.path.exists(output_subdir):
+        os.mkdir(output_subdir)
+        print("Directory ", output_subdir, " Created ")
+    else:
+        print("Directory ", output_subdir, " Already Exists")
+
 
 def conn_and_get_output(dev_dict, cmd_list):
 
@@ -129,6 +138,7 @@ def main():
     devs_from_vnoc()
 
     json_file_subdir = "site_json"
+    sub_dir(json_file_subdir)
     json_file_name = arguments.json_file
     json_file_path = os.path.join(os.getcwd(), json_file_subdir, json_file_name)
 
@@ -136,15 +146,7 @@ def main():
 
 
     # SAVING OUTPUT
-
-    output_subdir = "TEST"
-    # Create target Directory if don't exist
-    if not os.path.exists(output_subdir):
-        os.mkdir(output_subdir)
-        print("Directory ", output_subdir, " Created ")
-    else:
-        print("Directory ", output_subdir, " already exists")
-
+    sub_dir("TEST")
 
     for dev in devs:
         print(f"\n\n==== Device {dev}")
