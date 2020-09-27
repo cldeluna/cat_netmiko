@@ -62,13 +62,12 @@ def create_cat_devobj_from_json_list(dev):
         'password' : pwd,
         'secret' : sec,
         'port' : 8181
-
     }
     """
 
     dev_obj = {}
     # print(os.environ)
-    usr = os.environ['NET_USER']
+    usr = os.environ['NET_USR']
     pwd = os.environ['NET_PWD']
 
     core_dev = r'(ar|as|ds){1}\d\d'
@@ -169,10 +168,13 @@ def main():
     for dev in devs:
         print(f"\n\n==== Device {dev}")
         devdict = create_cat_devobj_from_json_list(dev)
-        resp = conn_and_get_output(devdict, cmds)
-        print(resp)
-        output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
-        write_txt(output_dir, resp)
+        if devdict['device_type'] != 'unknown':
+            resp = conn_and_get_output(devdict, cmds)
+            print(resp)
+            output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
+            write_txt(output_dir, resp)
+        else:
+            print(f"\n\n\txxx UNKNOWN Device {dev}")
 
 # Standard call to the main() function.
 if __name__ == '__main__':
