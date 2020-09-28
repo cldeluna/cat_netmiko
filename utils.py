@@ -64,7 +64,7 @@ def create_cat_devobj_from_json_list(dev):
         'port' : 8181
     }
     """
-
+    dotenv.load_dotenv()
     dev_obj = {}
     # print(os.environ)
     usr = os.environ['NET_USR']
