@@ -70,7 +70,7 @@ def create_cat_devobj_from_json_list(dev):
     usr = os.environ['NET_USR']
     pwd = os.environ['NET_PWD']
 
-    core_dev = r'(ar|as|ds){1}\d\d'
+    core_dev = r'(ar|as|ds|cs){1}\d\d'
     dev_obj.update({'ip': dev.strip()})
     dev_obj.update({'username': usr})
     dev_obj.update({'password': pwd})
