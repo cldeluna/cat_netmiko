@@ -5,7 +5,6 @@ general_show_commands:
   - show cdp neighbors
 ios_show_commands:
   - term len 0
-  - show hostname
   - show run
   - show version
   - show inventory

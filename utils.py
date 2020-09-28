@@ -84,7 +84,7 @@ def create_cat_devobj_from_json_list(dev):
         dev_obj.update({'device_type': 'silverpeak'})
     elif re.search(r'-wlc\d\d', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_wlc'})
-    elif re.search('10.1.10.', dev, re.IGNORECASE):
+    elif re.search('10.1.10.', dev, re.IGNORECASE) or re.search('1.1.1.', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_ios'})
     else:
         dev_obj.update({'device_type': 'unknown'})
@@ -122,12 +122,21 @@ def sub_dir(output_subdir):
 def conn_and_get_output(dev_dict, cmd_list):
 
     response = ""
-    net_connect = netmiko.ConnectHandler(**dev_dict)
+    try:
+        net_connect = netmiko.ConnectHandler(**dev_dict)
+    except (netmiko.ssh_exception.NetmikoTimeoutException, netmiko.ssh_exception.NetMikoAuthenticationException):
+        print(f"Cannot connect to device {dev_dict['ip']}.")
 
     for cmd in cmd_list:
         print(f"--- Show Command: {cmd}")
-        output = net_connect.send_command(cmd.strip())
-        response += f"\n** {cmd} \n{output}"
+
+        try:
+            output = net_connect.send_command(cmd.strip())
+            response += f"\n** {cmd} \n{output}"
+        except Exception as e:
+            print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
+            # continue
+
 
     return response
 
@@ -157,7 +166,7 @@ def main():
     # Create an OS agnostic full path to the .env file (assuming the .env file you want is in the current working dir
     dotenv_path = os.path.join(os.getcwd(), '.env')
 
-    load_env_from_dotenv_file(dotenv_path)
+    # load_env_from_dotenv_file(dotenv_path)
 
     # SAVING OUTPUT
     sub_dir(arguments.output_subdir)
