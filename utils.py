@@ -136,14 +136,12 @@ def main():
 
     fn = "show_cmds.yml"
     cmd_dict = read_yaml(fn)
-    print(cmd_dict)
-    print(cmd_dict.keys())
-    for k,v in cmd_dict.items():
-        print(k)
-        for cmd in v:
-            print(f"- {cmd}")
-
-    cmds = cmd_dict['general_show_commands']
+    # print(cmd_dict)
+    # print(cmd_dict.keys())
+    # for k,v in cmd_dict.items():
+    #     print(k)
+    #     for cmd in v:
+    #         print(f"- {cmd}")
 
     devs_from_vnoc()
 
@@ -161,7 +159,6 @@ def main():
 
     load_env_from_dotenv_file(dotenv_path)
 
-
     # SAVING OUTPUT
     sub_dir(arguments.output_subdir)
 
@@ -169,12 +166,19 @@ def main():
         print(f"\n\n==== Device {dev}")
         devdict = create_cat_devobj_from_json_list(dev)
         if devdict['device_type'] in ['cisco_ios', 'cisco_nxos']:
+            if re.search('ios', devdict['device_type']):
+                cmds = cmd_dict['ios_show_commands']
+            elif re.search('nxos', devdict['device_type']):
+                cmds = cmd_dict['nxos_show_commands']
+            else:
+                cmds = cmd_dict['general_show_commands']
             resp = conn_and_get_output(devdict, cmds)
             print(resp)
             output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
             write_txt(output_dir, resp)
         else:
             print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
+
 
 # Standard call to the main() function.
 if __name__ == '__main__':
