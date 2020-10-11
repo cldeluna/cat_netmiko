@@ -24,6 +24,13 @@ import dotenv
 import add_2env
 
 
+def replace_space(text, debug=False):
+    newtext = re.sub('\s+', '_', text)
+    if debug:
+        print(f"Original Text: {text}\nReturning Text: {newtext.strip()}")
+    return newtext.strip()
+
+
 def load_env_from_dotenv_file(path):
     # Load the key/value pairs in the .env file as environment variables
     if os.path.isfile(path):
@@ -33,7 +40,7 @@ def load_env_from_dotenv_file(path):
         exit()
 
 
-def devs_from_vnoc(vnoc_fn="20200924_vnoc_data_dump.xlsx"):
+def devs_from_vnoc(vnoc_fn="20200924_vnoc_data_dump.xlsx", debug=False):
 
     df = pd.read_excel(vnoc_fn, dtype={'SiteID': object})
     df.fillna("TBD", inplace=True)
@@ -42,8 +49,9 @@ def devs_from_vnoc(vnoc_fn="20200924_vnoc_data_dump.xlsx"):
     for s in sites:
         tdf = df[df['SiteID'] == s]
         devlist = tdf['fqdn'].tolist()
-        print(f"==========Site {s}  Total Devices {len(devlist)}==============")
-        print(devlist)
+        if debug:
+            print(f"==========Site {s}  Total Devices {len(devlist)}==============")
+            print(devlist)
         # This subdir must exists
         json_file_subdir = "site_json"
         sub_dir(json_file_subdir)
@@ -110,13 +118,14 @@ def write_txt(filename, data):
     return f
 
 
-def sub_dir(output_subdir):
+def sub_dir(output_subdir, debug=False):
     # Create target Directory if don't exist
     if not os.path.exists(output_subdir):
         os.mkdir(output_subdir)
         print("Directory ", output_subdir, " Created ")
     else:
-        print("Directory ", output_subdir, " Already Exists")
+        if debug:
+            print("Directory ", output_subdir, " Already Exists")
 
 
 def conn_and_get_output(dev_dict, cmd_list):
@@ -132,7 +141,7 @@ def conn_and_get_output(dev_dict, cmd_list):
 
         try:
             output = net_connect.send_command(cmd.strip())
-            response += f"\n** {cmd} \n{output}"
+            response += f"\n!--- {cmd} \n{output}"
         except Exception as e:
             print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
             # continue
@@ -141,7 +150,29 @@ def conn_and_get_output(dev_dict, cmd_list):
     return response
 
 
+def get_all_file_paths(directory):
+    # initializing empty file paths list
+    file_paths = []
+
+    # crawling through directory and subdirectories
+    for root, directories, files in os.walk(directory):
+        for filename in files:
+            # join the two strings in order to form the full filepath.
+            filepath = os.path.join(root, filename)
+            file_paths.append(filepath)
+
+            # returning all file paths
+    return file_paths
+
+
+
 def main():
+
+    add_2env.set_env()
+
+    # Call the set_env function with a description indicating we are setting a password and set the
+    # sensitive option to true so that the password can be typed in securely without echo to the screen
+    add_2env.set_env(desc="Password", sensitive=True)
 
     fn = "show_cmds.yml"
     cmd_dict = read_yaml(fn)
@@ -179,6 +210,8 @@ def main():
                 cmds = cmd_dict['ios_show_commands']
             elif re.search('nxos', devdict['device_type']):
                 cmds = cmd_dict['nxos_show_commands']
+            elif re.search('wlc', devdict['device_type']):
+                cmds = cmd_dict['wlc_show_commands']
             else:
                 cmds = cmd_dict['general_show_commands']
             resp = conn_and_get_output(devdict, cmds)
