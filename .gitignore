@@ -1,7 +1,10 @@
-test*
+__pycache__
+.DS_Store
+*,pyc
+*test*
 .idea/
 site*
 .env
-__pycache__
+*.zip
 
 
