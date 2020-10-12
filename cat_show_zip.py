@@ -95,7 +95,7 @@ def main():
         else:
             print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
 
-        print(cmds)
+        # print(cmds)
 
     ##  Zip the Dir
     # path to folder which needs to be zipped
