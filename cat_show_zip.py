@@ -52,7 +52,7 @@ def main():
     #     for cmd in v:
     #         print(f"- {cmd}")
 
-    utils.devs_from_vnoc()
+    # utils.devs_from_vnoc()
 
     json_file_subdir = "site_json"
     utils.sub_dir(json_file_subdir)
