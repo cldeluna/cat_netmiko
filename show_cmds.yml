@@ -19,6 +19,7 @@ ios_show_commands:
   - show mac address-table
   - show etherchannel sum
   - show vrf
+  - show ip route
 nxos_show_commands:
   - term len 0
   - show hostname
@@ -36,6 +37,7 @@ nxos_show_commands:
   - show mac address-table
   - show port-channel sum
   - show vrf
+  - show ip route
 wlc_show_commands:
   - show time
   - show sysinfo
