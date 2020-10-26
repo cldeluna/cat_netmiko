@@ -1,5 +1,6 @@
 # Dictionary where key is "ios_show_commands" and value is a list of show commands
 general_show_commands:
+  - term len 0
   - show run
   - show version
   - show cdp neighbors
@@ -39,6 +40,7 @@ nxos_show_commands:
   - show vrf
   - show ip route
 wlc_show_commands:
+  - config paging disable
   - show time
   - show sysinfo
   - show client state summary
@@ -55,6 +57,7 @@ wlc_show_commands:
   - show ap crash-file
   - show ap summary
 pre_post_commands:
+  - term len 0
   - show run
   - show interface trunk
   - show span
