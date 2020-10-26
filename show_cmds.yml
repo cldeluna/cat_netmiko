@@ -54,3 +54,8 @@ wlc_show_commands:
   - show ap uptime
   - show ap crash-file
   - show ap summary
+pre_post_commands:
+  - show run
+  - show interface trunk
+  - show span
+  - show interface status

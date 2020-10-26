@@ -16,7 +16,6 @@ import argparse
 import utils
 import add_2env
 import os
-# import zipfile
 import re
 import dotenv
 import datetime
@@ -45,15 +44,8 @@ def main():
 
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
-    # print(cmd_dict)
-    # print(cmd_dict.keys())
-    # for k,v in cmd_dict.items():
-    #     print(k)
-    #     for cmd in v:
-    #         print(f"- {cmd}")
 
-    # utils.devs_from_vnoc()
-
+    # Where are the topology JSON files
     json_file_subdir = "site_json"
     utils.sub_dir(json_file_subdir)
     json_file_name = arguments.json_file
@@ -75,7 +67,7 @@ def main():
         print(f"\n\n==== Device {dev}")
         devdict = utils.create_cat_devobj_from_json_list(dev)
 
-        if devdict['device_type'] in ['cisco_ios', 'cisco_nxos']:
+        if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
             if arguments.show_cmd:
                 cmds = []
                 cmds.append(arguments.show_cmd)
@@ -133,13 +125,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Description",
                                      epilog="Usage: ' python utils' ")
 
-    #parser.add_argument('all', help='Execute all exercises in week 4 assignment')
     parser.add_argument('-j', '--json_file', help='Name of JSON file with list of devices', action='store',
                         default="ios_test.json")
     parser.add_argument('-o', '--output_subdir', help='Name of output subdirectory for show command files', action='store',
                         default="DEFAULT_IOS_TEST")
-    parser.add_argument('-s', '--show_cmd', help='Execute a single show command across all devices', action='store',
-                        )
+    parser.add_argument('-s', '--show_cmd', help='Execute a single show command across all devices', action='store')
     arguments = parser.parse_args()
-    print(arguments)
+    # print(arguments)
     main()
