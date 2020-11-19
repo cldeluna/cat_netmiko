@@ -80,7 +80,7 @@ def main():
             else:
                 cmds = cmd_dict['general_show_commands']
             resp = utils.conn_and_get_output(devdict, cmds)
-            print(resp)
+            # print(resp)
             output_dir = os.path.join(os.getcwd(), arguments.output_subdir, f"{dev}.txt")
             utils.write_txt(output_dir, resp)
 
