@@ -146,7 +146,6 @@ def conn_and_get_output(dev_dict, cmd_list):
             print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
             # continue
 
-
     return response
 
 
