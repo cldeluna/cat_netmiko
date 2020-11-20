@@ -97,9 +97,12 @@ def create_cat_devobj_from_json_list(dev):
         dev_obj.update({'device_type': 'cisco_wlc'})
     elif re.search('10.1.10.109', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_wlc'})
-        dev_obj.update({'username': 'adminro'})
-        dev_obj.update({'password': 'Readonly1'})
-        dev_obj.update({'secret': 'Readonly1'})
+        # dev_obj.update({'username': 'adminro'})
+        # dev_obj.update({'password': 'Readonly1'})
+        # dev_obj.update({'secret': 'Readonly1'})
+        dev_obj.update({'username': 'admin'})
+        dev_obj.update({'password': 'A123m!'})
+        dev_obj.update({'secret': 'A123m!'})
     elif re.search('10.1.10.', dev, re.IGNORECASE) or re.search('1.1.1.', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_ios'})
     else:
@@ -299,9 +302,9 @@ def get_and_zip_output(devices_list, save_to_subdir, debug=False):
     zip_basefn = f"{save_to_subdir}_{datestamp}"
     zip_fn = f"{zip_basefn}"
 
-    shutil.make_archive(zip_fn, 'zip', curr_dir)
+    shutil.make_archive(zip_fn, 'zip', directory)
 
-    print(f"All files zipped successfully to Zip file {zip_fn} in directory {curr_dir}!\n\n")
+    print(f"All files zipped successfully to Zip file {zip_fn} in directory {directory}!\n\n")
 
     return zip_fn
 
