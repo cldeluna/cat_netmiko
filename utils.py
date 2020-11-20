@@ -22,6 +22,9 @@ import os
 import re
 import dotenv
 import add_2env
+import shutil
+import ntpath
+import datetime
 
 
 def replace_space(text, debug=False):
@@ -92,6 +95,11 @@ def create_cat_devobj_from_json_list(dev):
         dev_obj.update({'device_type': 'silverpeak'})
     elif re.search(r'-wlc\d\d', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_wlc'})
+    elif re.search('10.1.10.109', dev, re.IGNORECASE):
+        dev_obj.update({'device_type': 'cisco_wlc'})
+        dev_obj.update({'username': 'adminro'})
+        dev_obj.update({'password': 'Readonly1'})
+        dev_obj.update({'secret': 'Readonly1'})
     elif re.search('10.1.10.', dev, re.IGNORECASE) or re.search('1.1.1.', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_ios'})
     else:
@@ -106,9 +114,13 @@ def read_yaml(filename):
     return data
 
 
-def read_json(filename):
+def read_json(filename, debug=False):
     with open(filename) as f:
         data = json.load(f)
+    if debug:
+        print(f"\n...in the read_json function in utils.py")
+        print(data)
+        print(f"returning data of type {type(data)} with {len(data)} elements\n")
     return data
 
 
@@ -128,7 +140,7 @@ def sub_dir(output_subdir, debug=False):
             print("Directory ", output_subdir, " Already Exists")
 
 
-def conn_and_get_output(dev_dict, cmd_list):
+def conn_and_get_output(dev_dict, cmd_list, debug=False):
 
     response = ""
     try:
@@ -137,8 +149,8 @@ def conn_and_get_output(dev_dict, cmd_list):
         print(f"Cannot connect to device {dev_dict['ip']}.")
 
     for cmd in cmd_list:
-        print(f"--- Show Command: {cmd}")
-
+        if debug:
+            print(f"--- Show Command: {cmd}")
         try:
             output = net_connect.send_command(cmd.strip())
             response += f"\n!--- {cmd} \n{output}"
@@ -162,6 +174,148 @@ def get_all_file_paths(directory):
 
             # returning all file paths
     return file_paths
+
+
+def get_files_in_dir(directory, ext=".txt", debug=False):
+
+    # Initialise list of files
+    file_list = []
+
+    # Make sure extension has leading dot
+    if not re.match(r'.',ext):
+        ext = "." + ext
+
+    # Iterate through directory looking for files with provided extension
+    for file in os.listdir(directory):
+        if file.endswith(ext):
+            # print(os.path.join(directory, file))
+            file_list.append(os.path.join(directory, file))
+
+    if debug:
+        print(f"\nFrom get_files_in_dir Function, List of all files of type {ext} in directory:\n{directory}\n")
+        for afile in file_list:
+            print(afile)
+
+    return file_list
+
+
+def read_files_in_dir(dir, ext, debug=False):
+
+    valid_file_list = []
+
+    try:
+        dir_list = os.listdir(dir)
+        # other code goes here, it iterates through the list of files in the directory
+
+        for afile in dir_list:
+
+            filename, file_ext = os.path.splitext(afile)
+
+            if file_ext.lower() in ext:
+                afile_fullpath = os.path.join(dir,afile)
+                valid_file_list.append(afile_fullpath)
+
+        if debug:
+            print(f"\nFrom read_files_in_dir Function, List of all files of type {ext} in directory:\n{dir}\n")
+            for afile in valid_file_list:
+                print(afile)
+
+    except WindowsError as winErr:
+
+        print("Directory error: " + str((winErr)))
+        print(sys.exit("Aborting Program Execution"))
+
+    return valid_file_list, dir_list
+
+
+def load_environment(debug=False):
+    # Load Credentials from environment variables
+    dotenv.load_dotenv(verbose=True)
+
+    usr_env = add_2env.check_env("NET_USR")
+    pwd_env = add_2env.check_env("NET_PWD")
+
+    if debug:
+        print(usr_env)
+        print(pwd_env)
+
+    if not usr_env['VALID'] and not pwd_env['VALID']:
+        add_2env.set_env()
+        # Call the set_env function with a description indicating we are setting a password and set the
+        # sensitive option to true so that the password can be typed in securely without echo to the screen
+        add_2env.set_env(desc="Password", sensitive=True)
+
+
+def get_and_zip_output(devices_list, save_to_subdir, debug=False):
+
+    datestamp = datetime.date.today()
+    print(f"===== Date is {datestamp} ====")
+
+    fn = "show_cmds.yml"
+    cmd_dict = read_yaml(fn)
+
+    # SAVING OUTPUT
+    sub_dir(save_to_subdir)
+
+    for dev in devices_list:
+        print(f"\n\n==== Device {dev}")
+        devdict = create_cat_devobj_from_json_list(dev)
+        print(f"---- Device Type {devdict['device_type']}")
+
+        if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
+            if re.search('ios', devdict['device_type']):
+                cmds = cmd_dict['ios_show_commands']
+            elif re.search('nxos', devdict['device_type']):
+                cmds = cmd_dict['nxos_show_commands']
+            elif re.search('wlc', devdict['device_type']):
+                cmds = cmd_dict['wlc_show_commands']
+            else:
+                cmds = cmd_dict['general_show_commands']
+            resp = conn_and_get_output(devdict, cmds, debug=True)
+            # print(resp)
+            output_dir = os.path.join(os.getcwd(), save_to_subdir, f"{dev}.txt")
+            write_txt(output_dir, resp)
+
+        else:
+            print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
+
+        # print(cmds)
+
+    ##  Zip the Dir
+    # path to folder which needs to be zipped
+    directory = save_to_subdir
+
+    curr_dir = os.getcwd()
+    # calling function to get all file paths in the directory
+    file_paths = get_all_file_paths(directory)
+
+    # printing the list of all files to be zipped
+    print('\n\nFollowing files will be zipped:')
+    for file_name in file_paths:
+        print(file_name)
+
+    # writing files to a zipfile
+    # Create zipfile name with timestamp
+    zip_basefn = f"{save_to_subdir}_{datestamp}"
+    zip_fn = f"{zip_basefn}"
+
+    shutil.make_archive(zip_fn, 'zip', curr_dir)
+
+    print(f"All files zipped successfully to Zip file {zip_fn} in directory {curr_dir}!\n\n")
+
+    return zip_fn
+
+
+def get_filename_wo_extension(fn_sting, debug=True):
+    head, tail = ntpath.split(fn_sting)
+    if tail:
+        fn = tail
+    else:
+        fn = ntpath.basename(head)
+    filename = os.path.splitext(fn)
+    if debug: print(f"{head} {tail} \nReturn: {filename[0]}")
+    return filename[0]
+
 
 
 
