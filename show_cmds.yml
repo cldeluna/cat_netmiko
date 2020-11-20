@@ -41,6 +41,8 @@ nxos_show_commands:
   - show ip route
 wlc_show_commands:
   - config paging disable
+  - show run-config commands
+  - show run-config commands no-ap
   - show time
   - show sysinfo
   - show client state summary
