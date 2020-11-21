@@ -4,6 +4,8 @@ general_show_commands:
   - show run
   - show version
   - show cdp neighbors
+  - show inventory
+  - dir
 ios_show_commands:
   - term len 0
   - show run
@@ -22,6 +24,7 @@ ios_show_commands:
   - show etherchannel sum
   - show vrf
   - show ip route
+  - dir
 nxos_show_commands:
   - term len 0
   - show hostname
@@ -41,6 +44,7 @@ nxos_show_commands:
   - show port-channel sum
   - show vrf
   - show ip route
+  - dir
 wlc_show_commands:
   - config paging disable
   - show run-config commands
