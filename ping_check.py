@@ -37,15 +37,30 @@ def main():
 
     json_files_to_process = utils.get_file_list(path, ".json", debug=True)
 
+    not_pingable_dict = {}
     for file in json_files_to_process:
 
         # Looad devices in JSON file
         devs = utils.read_json(file, debug=False)
 
+        temp_failed_ping_list = []
         print(f"\n\nPing Verification for {file}")
         for dev in devs:
-            print(f"\t {dev} ping result is {utils.ping_device(dev, debug=False)}")
-            # utils.ping_device(dev, debug=True)
+            ping_result = utils.ping_device(dev, debug=False)
+            print(f"\t {dev} ping result is {ping_result}")
+            if not ping_result:
+                temp_failed_ping_list.append(dev)
+
+
+        not_pingable_dict.update({file: temp_failed_ping_list})
+
+    print(f"\n\n====== SUMMARY of Failed Pings ========")
+    for k,v in not_pingable_dict.items():
+        print(f"Device File: {k}")
+        for d in v:
+            print(f"\t{d}")
+
+
 
 
 # Standard call to the main() function.
