@@ -12,6 +12,7 @@ ios_show_commands:
   - show cdp nei
   - show cd nei det
   - show vlan
+  - show spanning-tree
   - show int
   - show int status
   - show int trunk
@@ -30,6 +31,7 @@ nxos_show_commands:
   - show cdp nei
   - show cd nei det
   - show vlan
+  - show spanning-tree
   - show int
   - show int status
   - show int trunk
