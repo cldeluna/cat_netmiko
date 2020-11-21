@@ -25,6 +25,9 @@ import add_2env
 import shutil
 import ntpath
 import datetime
+import logging
+import subprocess
+import sys
 
 
 def replace_space(text, debug=False):
@@ -97,12 +100,12 @@ def create_cat_devobj_from_json_list(dev):
         dev_obj.update({'device_type': 'cisco_wlc'})
     elif re.search('10.1.10.109', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_wlc'})
-        # dev_obj.update({'username': 'adminro'})
-        # dev_obj.update({'password': 'Readonly1'})
-        # dev_obj.update({'secret': 'Readonly1'})
-        dev_obj.update({'username': 'admin'})
-        dev_obj.update({'password': 'A123m!'})
-        dev_obj.update({'secret': 'A123m!'})
+        dev_obj.update({'username': 'adminro'})
+        dev_obj.update({'password': 'Readonly1'})
+        dev_obj.update({'secret': 'Readonly1'})
+        # dev_obj.update({'username': 'admin'})
+        # dev_obj.update({'password': 'A123m!'})
+        # dev_obj.update({'secret': 'A123m!'})
     elif re.search('10.1.10.', dev, re.IGNORECASE) or re.search('1.1.1.', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_ios'})
     else:
@@ -249,7 +252,10 @@ def load_environment(debug=False):
         add_2env.set_env(desc="Password", sensitive=True)
 
 
-def get_and_zip_output(devices_list, save_to_subdir, debug=False):
+def get_and_zip_output(devices_list, save_to_subdir, debug=False, log=False):
+
+    logging.basicConfig(filename='netmiko.log', level=logging.DEBUG)
+    logger = logging.getLogger("netmiko")
 
     datestamp = datetime.date.today()
     print(f"===== Date is {datestamp} ====")
@@ -320,6 +326,85 @@ def get_filename_wo_extension(fn_sting, debug=True):
     return filename[0]
 
 
+def get_file_list(pth, ext='', debug=True):
+
+    # Initialize list of all valid files
+    file_list = []
+
+    valid_file_extenstion = []
+    if ext:
+        valid_file_extenstion.append(ext)
+    else:
+        valid_file_extenstion.append(".txt")
+        valid_file_extenstion.append(".log")
+
+    if os.path.exists(pth):
+        # Check to see if the argument is a directory
+        if os.path.isdir(pth):
+            print("Processing Directory: " + pth + " for all files with the following extensions: " + str(valid_file_extenstion))
+            file_list, total_files = read_files_in_dir(pth, valid_file_extenstion)
+            print("\t Total files in directory: " + str(len(total_files)))
+            print("\t Valid files in directory: " + str(len(file_list)))
+
+        else:
+            print("Processing File: " + pth)
+            file_list.append(pth)
+
+    else:
+        print("Problem with path or filename! {}".format(pth))
+        sys.exit("Aborting Program Execution due to bad file or directory argument.")
+
+    return file_list
+
+
+def os_is():
+    # Determine OS to set ping arguments
+    local_os = ''
+    if sys.platform == "linux" or sys.platform == "linux2":
+        local_os = 'linux'
+    elif sys.platform == "darwin":
+        local_os = 'linux'
+    elif sys.platform == "win32":
+        local_os = 'win'
+
+    return local_os
+
+
+def ping_device(ip, debug=False):
+
+    pings = False
+
+    local_os = os_is()
+
+    ## Ping with -c 3 on Linux or -n 3 on windows
+    if local_os == 'linux':
+        ping_count = "-c"
+        timeout = '-t'
+    else:
+        ping_count = "-n"
+        timeout = '-w'
+
+    device_pings = False
+    #info = subprocess.STARTUPINFO()
+    #output = subprocess.Popen(['ping', ping_count, '3', '-w', '500', ip], stdout=subprocess.PIPE,
+    #                          startupinfo=info).communicate()[0]
+    output = subprocess.Popen(['ping', ping_count, '3', timeout, '1000', ip], stdout=subprocess.PIPE
+                              ).communicate()[0]
+
+    if debug:
+        print(output)
+
+    if "Destination host unreachable" in output.decode('utf-8'):
+        print(ip + " is Offline. Destination unreachable.")
+    elif "TTL expired in transit" in output.decode('utf-8'):
+        print(ip + " is not reachable. TTL expired in transit.")
+    elif "Request timed out" in output.decode('utf-8'):
+        print("\n" + ip + " is Offline. Request timed out.")
+    else:
+
+        pings = True
+
+    return pings
 
 
 def main():
