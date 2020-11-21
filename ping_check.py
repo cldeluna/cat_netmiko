@@ -57,8 +57,12 @@ def main():
     print(f"\n\n====== SUMMARY of Failed Pings ========")
     for k,v in not_pingable_dict.items():
         print(f"Device File: {k}")
-        for d in v:
-            print(f"\t{d}")
+        if len(v) == 0:
+            print(f"\tAll devices ping!")
+        else:
+            for d in v:
+                print(f"\t{d} failed to respond to pings!")
+
 
 
 

@@ -396,12 +396,17 @@ def ping_device(ip, debug=False):
 
     if "Destination host unreachable" in output.decode('utf-8'):
         print(ip + " is Offline. Destination unreachable.")
+        pings = False
     elif "TTL expired in transit" in output.decode('utf-8'):
         print(ip + " is not reachable. TTL expired in transit.")
+        pings = False
     elif "Request timed out" in output.decode('utf-8'):
         print("\n" + ip + " is Offline. Request timed out.")
+        pings = False
+    elif "Request timeout" in output.decode('utf-8'):
+        print("\n" + ip + " is Offline. Request timed out.")
+        pings = False
     else:
-
         pings = True
 
     return pings
