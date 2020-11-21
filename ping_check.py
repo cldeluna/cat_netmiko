@@ -40,6 +40,8 @@ def main():
     not_pingable_dict = {}
     for file in json_files_to_process:
 
+        start = datetime.datetime.now()
+
         # Looad devices in JSON file
         devs = utils.read_json(file, debug=False)
 
@@ -47,16 +49,19 @@ def main():
         print(f"\n\nPing Verification for {file}")
         for dev in devs:
             ping_result = utils.ping_device(dev, debug=False)
-            print(f"\t {dev} ping result is {ping_result}")
+            print(f"\t{dev} ping result is {ping_result}")
             if not ping_result:
                 temp_failed_ping_list.append(dev)
 
 
         not_pingable_dict.update({file: temp_failed_ping_list})
 
+        # Script Execution Time
+        print(f"\n\tPing Execution Time for {file}: {datetime.datetime.now() - start}\n")
+
     print(f"\n\n====== SUMMARY of Failed Pings ========")
     for k,v in not_pingable_dict.items():
-        print(f"Device File: {k}")
+        print(f"\nDevice File: {k}")
         if len(v) == 0:
             print(f"\tAll devices ping!")
         else:
