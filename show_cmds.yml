@@ -15,6 +15,7 @@ ios_show_commands:
   - show cd nei det
   - show vlan
   - show spanning-tree
+  - show spanning-tree root priority system-id
   - show int
   - show int status
   - show int trunk
