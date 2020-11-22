@@ -43,7 +43,7 @@ def main():
     output_loger.addHandler(stdout_handler)
 
     output_loger.debug(f"\nPing Run for Directory {arguments.filename_or_dir} on {file_timestamp}\n")
-    output_loger.debug(f"\nPing Run Message: {arguments.message}\n")
+    output_loger.debug(f"Ping Run Message: {arguments.message}\n")
 
     # Keep a list of any files that did not have any output information
     no_output = []
