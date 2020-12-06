@@ -32,18 +32,19 @@ def main():
     file_timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     # https://www.kite.com/python/answers/how-to-print-logging-messages-to-both-stdout-and-to-a-file-in-python
-    output_loger = logging.getLogger()
-    output_loger.setLevel(logging.DEBUG)
+    output_logger = logging.getLogger()
+    output_logger.setLevel(logging.DEBUG)
 
-    output_log_fn = f"Log_{arguments.filename_or_dir}_{file_timestamp}.txt"
+    _ = utils.get_filename_wo_extension(arguments.json_dev_file)
+    output_log_fn = f"Log_{_}_{file_timestamp}.txt"
     output_file_handler = logging.FileHandler(output_log_fn)
     stdout_handler = logging.StreamHandler(sys.stdout)
 
-    output_loger.addHandler(output_file_handler)
-    output_loger.addHandler(stdout_handler)
+    output_logger.addHandler(output_file_handler)
+    output_logger.addHandler(stdout_handler)
 
-    output_loger.debug(f"\nPing Run for Directory {arguments.filename_or_dir} on {file_timestamp}\n")
-    output_loger.debug(f"Ping Run Message: {arguments.message}\n")
+    output_logger.debug(f"\nPing Run for Directory {arguments.json_dev_file} on {file_timestamp}\n")
+    output_logger.debug(f"Ping Run Message: {arguments.message}\n")
 
     # Keep a list of any files that did not have any output information
     no_output = []
@@ -54,7 +55,7 @@ def main():
     curr_dir = os.getcwd()
 
     # Mandatory argument passed to script - either a filename or a directory of files to process
-    path = arguments.filename_or_dir
+    path = arguments.json_dev_file
 
     json_files_to_process = utils.get_file_list(path, ".json", debug=True)
 
@@ -67,14 +68,14 @@ def main():
         devs = utils.read_json(file, debug=False)
 
         temp_failed_ping_list = []
-        output_loger.debug(f"\n\nPing Verification for {file}")
+        output_logger.debug(f"\n\nPing Verification for {file}")
         # print(f"\n\nPing Verification for {file}")
         # Ping Test Timestamp
-        output_loger.debug(f"\tPings started at {datetime.datetime.now()}\n")
+        output_logger.debug(f"\tPings started at {datetime.datetime.now()}\n")
         # print(f"Pings started at {datetime.datetime.now()}\n")
         for dev in devs:
             ping_result = utils.ping_device(dev, debug=False)
-            output_loger.debug(f"\t{dev} ping result is {ping_result}")
+            output_logger.debug(f"\t{dev} ping result is {ping_result}")
             # print(f"\t{dev} ping result is {ping_result}")
             if not ping_result:
                 temp_failed_ping_list.append(dev)
@@ -82,26 +83,26 @@ def main():
         not_pingable_dict.update({file: temp_failed_ping_list})
 
         # Ping Test Timestamp
-        output_loger.debug(f"\n\tPings completed at {datetime.datetime.now()}")
+        output_logger.debug(f"\n\tPings completed at {datetime.datetime.now()}")
         # print(f"\n\tPings completed at {datetime.datetime.now()}")
         # Script Execution Time
-        output_loger.debug(f"\tPing Execution Time for {file}: {datetime.datetime.now() - startt}\n")
+        output_logger.debug(f"\tPing Execution Time for {file}: {datetime.datetime.now() - startt}\n")
         # print(f"\tPing Execution Time for {file}: {datetime.datetime.now() - start}\n")
 
-    output_loger.debug(f"\n\n====== SUMMARY of Failed Pings ========")
+    output_logger.debug(f"\n\n====== SUMMARY of Failed Pings ========")
     # print(f"\n\n====== SUMMARY of Failed Pings ========")
     for k,v in not_pingable_dict.items():
-        output_loger.debug(f"\nDevice File: {k}")
+        output_logger.debug(f"\nDevice File: {k}")
         # print(f"\nDevice File: {k}")
         if len(v) == 0:
-            output_loger.debug(f"\tAll devices ping!")
+            output_logger.debug(f"\tAll devices ping!")
             # print(f"\tAll devices ping!")
         else:
             for d in v:
-                output_loger.debug(f"\t{d} failed to respond to pings!")
+                output_logger.debug(f"\t{d} failed to respond to pings!")
                 # print(f"\t{d} failed to respond to pings!")
 
-    output_loger.debug(f"\nScript Execution Time: {datetime.datetime.now() - start_time}\n")
+    output_logger.debug(f"\nScript Execution Time: {datetime.datetime.now() - start_time}\n")
 
 
 
@@ -109,12 +110,14 @@ def main():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Description",
                                      epilog="Usage: ' python ping_check' ")
-    parser.add_argument('filename_or_dir', help='filename or directory of files to parse')
+    parser.add_argument('json_dev_file', help='path to JSON file with devices to ping')
     parser.add_argument('-e', '--extension', action='store', default=False, help='Valid file extension in format '
                                                                                  '".xxx" or comma delimited '
                                                                                  '".txt, .fil" Default values if '
                                                                                  'option not give are .txt and .log')
     parser.add_argument('-m', '--message', action='store', default=f"Ping Run on {datetime.datetime.now()}",
+                        help='Optional Descriptive message for ping run')
+    parser.add_argument('-o', '--output', action='store', default=f"Ping Run on {datetime.datetime.now()}",
                         help='Optional Descriptive message for ping run')
     arguments = parser.parse_args()
     main()
