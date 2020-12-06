@@ -104,7 +104,13 @@ def main():
     # writing files to a zipfile
     # Create zipfile name with timestamp
     jsonfile_parts = arguments.json_file.split('.')
-    zip_basefn = f"{jsonfile_parts[0].strip()}_{datestamp}"
+    # Optional Note to distinguish or annotate the show commands
+    if arguments.note:
+        note_text = utils.replace_space(arguments.note)
+        zip_basefn = f"{jsonfile_parts[0].strip()}_{datestamp}_{note_text}"
+    else:
+        zip_basefn = f"{jsonfile_parts[0].strip()}_{datestamp}"
+
     if arguments.show_cmd:
         formatted_shcmd = utils.replace_space(arguments.show_cmd, debug=True)
         zip_fn = f"{zip_basefn}_{formatted_shcmd}"
@@ -130,6 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_subdir', help='Name of output subdirectory for show command files', action='store',
                         default="DEFAULT_IOS_TEST")
     parser.add_argument('-s', '--show_cmd', help='Execute a single show command across all devices', action='store')
+    parser.add_argument('-n', '--note', action='store', help='Short note to distinguish show commands. Ex. -pre or -post')
     arguments = parser.parse_args()
     # print(arguments)
     main()
