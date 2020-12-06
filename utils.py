@@ -392,7 +392,8 @@ def ping_device(ip, debug=False):
                               ).communicate()[0]
 
     if debug:
-        print(output)
+        # output is bitecode so need to decode to string
+        print(output.decode('UTF-8'))
 
     if "Destination host unreachable" in output.decode('utf-8'):
         print(ip + " is Offline. Destination unreachable.")

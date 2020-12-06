@@ -74,7 +74,7 @@ def main():
         output_logger.debug(f"\tPings started at {datetime.datetime.now()}\n")
         # print(f"Pings started at {datetime.datetime.now()}\n")
         for dev in devs:
-            ping_result = utils.ping_device(dev, debug=False)
+            ping_result = utils.ping_device(dev, debug=arguments.debug)
             output_logger.debug(f"\t{dev} ping result is {ping_result}")
             # print(f"\t{dev} ping result is {ping_result}")
             if not ping_result:
@@ -117,7 +117,9 @@ if __name__ == '__main__':
                                                                                  'option not give are .txt and .log')
     parser.add_argument('-m', '--message', action='store', default=f"Ping Run on {datetime.datetime.now()}",
                         help='Optional Descriptive message for ping run')
-    parser.add_argument('-o', '--output', action='store', default=f"Ping Run on {datetime.datetime.now()}",
-                        help='Optional Descriptive message for ping run')
+    parser.add_argument('-o', '--output', action='store', default=os.getcwd(),
+                        help='Optional directory to store output')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        default=False, help='Enable ping debug. Default: Disabled')
     arguments = parser.parse_args()
     main()
