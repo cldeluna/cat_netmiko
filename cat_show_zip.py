@@ -31,10 +31,10 @@ def main():
     dotenv.load_dotenv(verbose=True)
 
     usr_env = add_2env.check_env("NET_USR")
-    pwd_env = add_2env.check_env("NET_PWD")
-
-    # print(usr_env)
-    # print(pwd_env)
+    #     pwd_env = add_2env.check_env("NET_PWD")
+    #
+    #     # print(usr_env)
+    #     # print(pwd_env)
 
     if not usr_env['VALID'] and not pwd_env['VALID']:
         add_2env.set_env()
