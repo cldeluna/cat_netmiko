@@ -26,6 +26,7 @@ ios_show_commands:
   - show vrf
   - show ip route
   - dir
+  - show boot system
 nxos_show_commands:
   - term len 0
   - show hostname
