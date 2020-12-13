@@ -90,11 +90,11 @@ def main():
         # print(f"\tPing Execution Time for {file}: {datetime.datetime.now() - start}\n")
 
     output_logger.debug(f"\n\n====== SUMMARY of Failed Pings ========")
-    output_logger.debug(f"\nTotal Unreachable Devices: {len(not_pingable_dict.items())}")
+
     # print(f"\n\n====== SUMMARY of Failed Pings ========")
     for k,v in not_pingable_dict.items():
         output_logger.debug(f"\nDevice File: {k}")
-        # print(f"\nDevice File: {k}")
+        output_logger.debug(f"\nTotal Unreachable Devices: {len(v)}")
         if len(v) == 0:
             output_logger.debug(f"\tAll devices ping!")
             # print(f"\tAll devices ping!")
