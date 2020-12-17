@@ -48,10 +48,6 @@ def main():
     # Load Credentials from environment variables
     dotenv.load_dotenv(verbose=True)
 
-    usr = os.environ['INET_USR']
-    pwd = os.environ['INET_PWD']
-    sec = os.environ['INET_PWD']
-
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
 
@@ -59,9 +55,15 @@ def main():
     utils.sub_dir(arguments.output_subdir)
 
     if arguments.mfa:
+        usr = os.environ['INET_USR']
+        pwd = os.environ['INET_PWD']
+        sec = os.environ['INET_PWD']
         mfa_code = input("Enter your VIP Access Security Code: ")
         mfa = pwd + mfa_code.strip()
     else:
+        usr = os.environ['NET_USR']
+        pwd = os.environ['NET_PWD']
+        sec = os.environ['NET_PWD']
         mfa = pwd
 
     devdict = {
@@ -129,7 +131,7 @@ if __name__ == '__main__':
                         action='store',
                         help='Short note to distinguish show commands. Ex. -pre or -post')
     parser.add_argument('-m', '--mfa',
-                        action='store',
+                        action='store_true',
                         help='Multi Factor Authentication will prompt for VIP code',
                         default=False)
     arguments = parser.parse_args()
