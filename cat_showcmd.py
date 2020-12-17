@@ -88,7 +88,7 @@ def main():
             cmds = cmd_dict['wlc_show_commands']
         else:
             cmds = cmd_dict['general_show_commands']
-        resp = utils.conn_and_get_output(devdict, cmds)
+        resp = utils.conn_and_get_output(devdict, cmds, debug=True)
 
         # Optional Note to distinguish or annotate the show commands
         if arguments.note:
@@ -100,7 +100,7 @@ def main():
         output_dir = os.path.join(os.getcwd(), arguments.output_subdir, basefn)
         utils.write_txt(output_dir, resp)
 
-        print(f"Saving show command output to {output_dir}")
+        print(f"\nSaving show command output to {output_dir}\n\n")
 
     else:
         print(f"\n\n\txxx Skip Device {arguments.dev} Type {devdict['device_type']}")
@@ -131,6 +131,6 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--mfa',
                         action='store',
                         help='Multi Factor Authentication will prompt for VIP code',
-                        default="local")
+                        default=False)
     arguments = parser.parse_args()
     main()
