@@ -48,9 +48,9 @@ def main():
     # Load Credentials from environment variables
     dotenv.load_dotenv(verbose=True)
 
-    usr = os.environ['NET_USR']
-    pwd = os.environ['NET_PWD']
-    sec = os.environ['NET_PWD']
+    usr = os.environ['INET_USR']
+    pwd = os.environ['INET_PWD']
+    sec = os.environ['INET_PWD']
 
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
