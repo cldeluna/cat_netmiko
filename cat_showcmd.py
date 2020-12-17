@@ -14,8 +14,12 @@ __license__ = "Python"
 
 import argparse
 import netmiko
-import os
+import datetime
 import utils
+import add_2env
+import os
+import re
+import dotenv
 
 def some_function():
     pass
@@ -37,88 +41,69 @@ def main():
     # sbx-nxos-mgmt.cisco.com ansible_host=sbx-nxos-mgmt.cisco.com ansible_port=8181 username=admin password=Admin_1234!
     # ios-xe-mgmt.cisco.com ansible_host=ios-xe-mgmt.cisco.com port=8181 username=root password=D_Vay!_10&
 
-    os.environ["NET_TEXTFSM"] = "./ntc-templates/templates"
 
-    user = 'admin'
-    pwd = 'Admin_1234!'
-    sec = 'Admin_1234!'
+    datestamp = datetime.date.today()
+    print(f"===== Date is {datestamp} ====")
 
-    dev = {
-        'device_type': 'cisco_nxos',
-        'ip' : 'sbx-nxos-mgmt.cisco.com',
-        'username' : user,
-        'password' : pwd,
-        'secret' : sec,
-        'port' : 8181
+    # Load Credentials from environment variables
+    dotenv.load_dotenv(verbose=True)
 
+    usr = os.environ['NET_USR']
+    pwd = os.environ['NET_PWD']
+    sec = os.environ['NET_PWD']
+
+    fn = "show_cmds.yml"
+    cmd_dict = utils.read_yaml(fn)
+
+    # SAVING OUTPUT
+    utils.sub_dir(arguments.output_subdir)
+
+    if arguments.mfa:
+        mfa_code = input("Enter your VIP Access Security Code: ")
+        mfa = pwd + mfa_code.strip()
+    else:
+        mfa = pwd
+
+    devdict = {
+        'device_type': arguments.device_type,
+        'ip' : arguments.dev,
+        'username' : usr,
+        'password' : mfa,
+        'secret' : mfa,
+        'port' : arguments.port
     }
-
-    dev_asa = {
-        'device_type': 'cisco_asa',
-        'ip' : '10.1.10.27',
-        'username' : 'cisco',
-        'password' : 'cisco',
-        'secret' : 'cisco',
-        'port' : 22
-
-    }
-
-    user = 'root'
-    pwd = 'D_Vay!_10&'
-    sec = 'D_Vay!_10&'
-    #
-    dev = {
-        'device_type': 'cisco_ios',
-        'ip' : 'ios-xe-mgmt.cisco.com',
-        'username' : user,
-        'password' : pwd,
-        'secret' : sec,
-        'port' : '8181'
-    }
-
 
     # RAW Parsing with Python
-    print(f"\n===============  Netmiko ONLY ===============")
-    try:
-        dev_conn = netmiko.ConnectHandler(**dev)
-        dev_conn.enable()
-        response = dev_conn.send_command('show version')
-        print(f"\nResponse is of type {type(response)}\n")
-        print(response)
-        # because the response is a string we need to do some string manipulation
-        # first we need to split the string into lines
-        resp = response.splitlines()
+    print(f"\n===============  Device {arguments.dev} ===============")
 
-        with open('test.txt', 'w') as sample_file: 
-            sample_file.write(response)
+    if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
+        if arguments.show_cmd:
+            cmds = []
+            cmds.append(arguments.show_cmd)
+        elif re.search('ios', devdict['device_type']):
+            cmds = cmd_dict['ios_show_commands']
+        elif re.search('nxos', devdict['device_type']):
+            cmds = cmd_dict['nxos_show_commands']
+        elif re.search('wlc', devdict['device_type']):
+            cmds = cmd_dict['wlc_show_commands']
+        else:
+            cmds = cmd_dict['general_show_commands']
+        resp = utils.conn_and_get_output(devdict, cmds)
 
-        # now we should have a list in the variable resp over which we can iterate
-        print(f"\nSplit Response is of type {type(resp)}\n")
-        print(resp)
-        find_string = "NXOS: version"
-        # look
-        for line in resp:
-            if find_string in line:
-                print(f"******** FOUND LINE! ******\n{line}\n")
+        # Optional Note to distinguish or annotate the show commands
+        if arguments.note:
+            note_text = utils.replace_space(arguments.note)
+            basefn = f"{arguments.dev}_{datestamp}_{note_text}.txt"
+        else:
+            basefn = f"{arguments.dev}_{datestamp}.txt"
 
-    except Exception as e:
-        print(e)
+        output_dir = os.path.join(os.getcwd(), arguments.output_subdir, basefn)
+        utils.write_txt(output_dir, resp)
 
+        print(f"Saving show command output to {output_dir}")
 
-    print(f"\n===============  Netmiko with TEXTFSM OPTION  ===============")
-    try:
-        dev_conn = netmiko.ConnectHandler(**dev)
-        dev_conn.enable()
-        response = dev_conn.send_command('show interface', use_textfsm=True)
-        print(f"\nResponse is of type {type(response)}\n")
-        print(response)
-        print(f"\n== Pick out specific information from the response!")
-        print(f"The OS is {response[0]['os']}")
-        print(f"The Platform is {response[0]['platform']}")
-        print(f"The boot image is {response[0]['boot_image']}")
-
-    except Exception as e:
-        print(e)
+    else:
+        print(f"\n\n\txxx Skip Device {arguments.dev} Type {devdict['device_type']}")
 
 
 # Standard call to the main() function.
@@ -126,8 +111,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Description",
                                      epilog="Usage: ' python test' ")
 
-    #parser.add_argument('all', help='Execute all exercises in week 4 assignment')
-    parser.add_argument('-a', '--all', help='Execute all exercises in week 4 assignment', action='store_true',
-                        default=False)
+    parser.add_argument('dev', help='Get show commands from this device (ip or FQDN) and save to file.')
+    parser.add_argument('-t', '--device_type',
+                        help='Device Types include cisco_nxos, cisco_asa, cisco_wlc Default: cisco_ios',
+                        action='store',
+                        default='cisco_ios')
+    parser.add_argument('-p', '--port',
+                        help='Port for ssh connection. Default: 22',
+                        action='store',
+                        default='22')
+    parser.add_argument('-o', '--output_subdir',
+                        help='Name of output subdirectory for show command files',
+                        action='store',
+                        default="local")
+    parser.add_argument('-s', '--show_cmd', help='Execute a single show command', action='store')
+    parser.add_argument('-n', '--note',
+                        action='store',
+                        help='Short note to distinguish show commands. Ex. -pre or -post')
+    parser.add_argument('-m', '--mfa',
+                        action='store',
+                        help='Multi Factor Authentication will prompt for VIP code',
+                        default="local")
     arguments = parser.parse_args()
     main()
