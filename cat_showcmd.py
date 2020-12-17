@@ -59,12 +59,14 @@ def main():
         pwd = os.environ['INET_PWD']
         sec = os.environ['INET_PWD']
         mfa_code = input("Enter your VIP Access Security Code: ")
-        mfa = pwd + mfa_code.strip()
+        mfa = f"{pwd}{mfa_code.strip()}"
     else:
         usr = os.environ['NET_USR']
         pwd = os.environ['NET_PWD']
         sec = os.environ['NET_PWD']
         mfa = pwd
+
+    print(mfa)
 
     devdict = {
         'device_type': arguments.device_type,
