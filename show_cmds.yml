@@ -25,6 +25,7 @@ ios_show_commands:
   - show etherchannel sum
   - show vrf
   - show ip route
+  - show swi
   - dir
   - show boot system
 nxos_show_commands:
