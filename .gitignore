@@ -9,5 +9,6 @@ site*
 local*
 Log*.txt
 *.log
+ntc-templates
 
 
