@@ -42,6 +42,8 @@ def main():
     # ios-xe-mgmt.cisco.com ansible_host=ios-xe-mgmt.cisco.com port=8181 username=root password=D_Vay!_10&
 
 
+
+
     datestamp = datetime.date.today()
     print(f"===== Date is {datestamp} ====")
 
@@ -51,22 +53,25 @@ def main():
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
 
+    # Set the environment variable for Netmiko to use TextFMS ntc-templates library
+    os.environ["NET_TEXTFSM"] = "./ntc-templates/templates"
+
     # SAVING OUTPUT
     utils.sub_dir(arguments.output_subdir)
 
     if arguments.mfa:
+        # User is using MFA
         usr = os.environ['INET_USR']
         pwd = os.environ['INET_PWD']
         sec = os.environ['INET_PWD']
         mfa_code = input("Enter your VIP Access Security Code: ")
         mfa = f"{pwd}{mfa_code.strip()}"
     else:
+        # User has account without MFA
         usr = os.environ['NET_USR']
         pwd = os.environ['NET_PWD']
         sec = os.environ['NET_PWD']
         mfa = pwd
-
-    print(mfa)
 
     devdict = {
         'device_type': arguments.device_type,
@@ -80,6 +85,7 @@ def main():
     # RAW Parsing with Python
     print(f"\n===============  Device {arguments.dev} ===============")
 
+    # Set the Show Commands to execute by device type or command provided via CLI
     if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
         if arguments.show_cmd:
             cmds = []
