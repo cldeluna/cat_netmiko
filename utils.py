@@ -29,7 +29,8 @@ import logging
 import subprocess
 import sys
 import textfsm
-
+from icecream import ic
+ic.configureOutput(includeContext=True)
 
 
 # ### Argument Validation Functions
@@ -252,25 +253,32 @@ def create_cat_devobj_from_json_list(dev):
     return dev_obj
 
 
-def get_show_cmds_parsed(dev, outdir, shcmd, debug=False):
+def get_show_cmd_parsed(dev, shcmd, save_2json=False, debug=False):
 
     print(f"\n\n==== Device {dev} getting command {shcmd}")
+
+    outdir = 'local'
 
     fn = "show_cmds.yml"
     cmd_dict = read_yaml(fn)
     devdict = create_cat_devobj_from_json_list(dev)
 
-    print(f'devdict is {devdict}')
+    if debug: print(f'devdict is {devdict}')
 
-    if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
-        resp = conn_and_get_output_parsed(devdict, shcmd)
-        # print(resp)
+    # Default to Cisco IOS device type
+    if devdict['device_type'] == 'unknown':
+        devdict.update({'device_type': 'cisco_ios'})
+
+    # if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
+    resp = conn_and_get_output_parsed(devdict, shcmd)
+    # print(resp)
+    if save_2json:
         output_dir = os.path.join(os.getcwd(), outdir, f"{dev}_{shcmd.replace(' ', '_')}.json")
         print(f"Saving JSON to {output_dir}")
         with open(output_dir, 'w') as f:
             json.dump(resp, f, indent=4)
-    else:
-        print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
+    # else:
+    #     print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
 
     return resp
 
@@ -333,6 +341,8 @@ def conn_and_get_output_parsed(dev_dict, cmd, debug=False):
     os.environ["NET_TEXTFSM"] = "./ntc-templates/templates"
 
     response = ""
+    output = ""
+    ic(dev_dict)
     try:
         net_connect = netmiko.ConnectHandler(**dev_dict)
     except netmiko.ssh_exception.NetmikoTimeoutException:
@@ -348,6 +358,7 @@ def conn_and_get_output_parsed(dev_dict, cmd, debug=False):
         print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
         print(f"{e}\n")
 
+    ic(output)
     return output
 
 

@@ -21,29 +21,45 @@ import dotenv
 import datetime
 import shutil
 import json
+from icecream import ic
 
-def get_list_of_nei(dev, root_dev):
+
+def get_list_of_nei(dev_fqdn, root_dev, debug=False):
 
     # Use full show command for parsing to work!!
-    response = utils.get_show_cmds_parsed(dev, arguments.output_subdir, "show cdp neighbors detail")
+    response = utils.get_show_cmd_parsed(dev_fqdn, "show cdp neighbors detail", save_2json=False, debug=True)
     # Returns a list of dictionaries
+    ic(dev_fqdn)
+    devices_dict = dict()
+    filter_regex_list = r'.+(WS-)?C\d{4}'
 
-    device_lod = []
-    filter_regex_list = r'.+WS-'
+    # For every neighbor found weed out connections to self and connections to upstream root device
     for line in response:
-        tmpd = dict()
+        ic(line)
+        ic(dev_fqdn)
+        # Ignore connections to self
+        if line['destination_host'] != dev_fqdn:
 
-        if re.search(filter_regex_list, line['platform']):
+            # Only interested in devices that are downstream not upstream to root device
+            # if not re.search(root_dev, line['destination_host']):
 
-            tmpd.update({
-                'fqdn': line['destination_host'],
-                'mgmt_ip': line['management_ip'],
-                'platform': line['platform']
+            tmpd = dict()
 
-            })
-            device_lod.append(tmpd)
+            if re.search(filter_regex_list, line['platform']):
 
-    print(json.dumps(device_lod, indent=4))
+                tmpd.update({
+                    'fqdn': line['destination_host'],
+                    'mgmt_ip': line['management_ip'],
+                    'platform': line['platform']
+
+                })
+
+                if line['destination_host'] not in devices_dict.keys():
+                    devices_dict.update({line['destination_host']: tmpd})
+
+    if debug: print(json.dumps(devices_dict, indent=4))
+
+    return devices_dict
 
 
 def main():
@@ -52,7 +68,7 @@ def main():
     print(f"===== Date is {datestamp} ====")
 
     # Load Credentials from environment variables
-    dotenv.load_dotenv(verbose=True)
+    dotenv.load_dotenv(verbose=False)
 
     usr_env = add_2env.check_env("NET_USR")
     pwd_env = add_2env.check_env("NET_PWD")
@@ -69,10 +85,26 @@ def main():
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
 
-    # devdict = utils.create_cat_devobj_from_json_list("10.1.10.212")
-    #     # print(devdict)
+    seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn)
+    ic(seed_dict)
+    ic(seed_dict.keys())
 
-    dev = "10.1.10.212"
+    level1_list = []
+    for dev in seed_dict.keys():
+        print(f"\n\n---- Attempting Level 1 connections....")
+        print(f"\t- Level 1 connection to {seed_dict[dev]}....")
+        level1_dict = get_list_of_nei(seed_dict[dev]['fqdn'], arguments.seed_device_fqdn, debug=False)
+    print(f"==================")
+    print(json.dumps(level1_dict))
+
+
+    ic(seed_dict)
+    ic(level1_dict)
+    seed_dict.update(level1_dict)
+    ic(seed_dict)
+
+    x = list(seed_dict.keys())
+    ic(x)
 
 
 # Standard call to the main() function.
@@ -80,7 +112,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Description",
                                      epilog="Usage: ' python seed_showcmds' ")
 
-    #parser.add_argument('all', help='Execute all exercises in week 4 assignment')
+    parser.add_argument('seed_device_fqdn', help='Enter FQDN of Seed or Root device to start CDP based device discovery')
+
     parser.add_argument('-o', '--output_subdir', help='Name of output subdirectory for show command files', action='store',
                         default="DEFAULT_IOS_TEST")
     arguments = parser.parse_args()
