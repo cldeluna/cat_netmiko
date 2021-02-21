@@ -28,6 +28,144 @@ import datetime
 import logging
 import subprocess
 import sys
+import textfsm
+
+
+
+# ### Argument Validation Functions
+
+def arg_type_check_region(region):
+
+    # Region can be 'APAC', 'EAME', 'NA_LA'
+    valid_regions = ['APAC', 'EAME', 'NA_LA']
+    if region.strip().upper() in valid_regions:
+        valid_region = region.upper()
+    else:
+        raise ValueError("Valid values are 'APAC', 'EAME', 'NA_LA' ")
+
+    return valid_region
+
+
+def arg_type_check_sitetype(value):
+
+    valid_type = ['med', 'small', 'micro', 'medium']
+
+    if value.strip() in valid_type:
+        valid_sitetype = value.strip()
+    else:
+        raise ValueError
+
+    return valid_sitetype
+
+
+def arg_type_check_siteid(value):
+
+    if re.search(r'^\d{1,4}$', value.strip()):
+        valid_value = value.strip()
+        if len(valid_value) == 3:
+            valid_value = f"0{valid_value}"
+        elif len(valid_value) == 2:
+            valid_value = f"00{valid_value}"
+        elif len(valid_value) == 1:
+            valid_value = f"000{valid_value}"
+        else:
+            valid_value = value
+
+    else:
+        raise ValueError
+
+    return valid_value
+
+
+########
+def set_base_by_user(base_override='', debug=False):
+
+
+    user = os.getlogin().lower()
+    desktop_os = os.name
+    base_path = ''
+    if debug: print(f"Setting Base Path based on user {user}")
+
+    # If a root or base directory is passed as an argument then set the base path otherwise, set base path depending
+    # on who is logged in
+    if base_override:
+        base_path = base_override
+        if debug: print(f"Using Optional Base Path Provided:\n{base_override}")
+    else:
+        if re.search('lucas', user):
+            base_path = os.path.join("D:\\","Dropbox (EIA)","CAT_NT","Network_Transformation_Phase3")
+
+        elif re.search('Claudia', user, re.IGNORECASE):
+            # MacBookPro 13 in
+            # /Users/Claudia/Dropbox (Indigo Wire Networks)/CAT_NetMon_Project/
+            base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "CAT_NetMon_Project")
+
+        elif re.search('root', user, re.IGNORECASE):
+            # MacBookPro 13 in
+            # /Users/Claudia/Dropbox (Indigo Wire Networks)/CAT_NetMon_Project/
+            # base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "CAT_NetMon_Project")
+            # /Users/claudia/Dropbox (Indigo Wire Networks)/Cat_Software_Upgrades/
+            base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "Cat_Software_Upgrades")
+
+
+
+        elif re.search('admin', user):
+            # /Users/admin/Dropbox (EIA)/CAT_NT/Network_Transformation_Phase3
+            # /Users/claudia/Dropbox (Indigo Wire Networks)/CAT_NetMon_Project/Sites/
+            base_path = os.path.join("/Users", "admin", "Dropbox (EIA)", "CAT_NT", "Network_Transformation_Phase3")
+
+        elif re.search('claud', user):
+            # if debug: /Users/claudia/Dropbox (Indigo Wire Networks)/CAT_NetMon_Project/Sites/
+            if desktop_os == 'nt':
+                base_path = os.path.join("D:\\","Dropbox (Indigo Wire Networks)","CAT_NetMon_Project")
+            else:
+                base_path = os.path.join("/Users","claudia", "Dropbox (Indigo Wire Networks)", "CAT_NetMon_Project")
+    if debug: print(f"Base Path for user {user} is:\n\t{base_path}")
+
+    return base_path
+
+
+def find_site_root(base_path, region, siteid, disamabig_dir=False):
+    """
+    PATH to Root or top level directory of Site
+    :param base_path:
+    :param region:
+    :param siteid:
+    :return:
+    """
+
+    site_path = ''
+    valid_file_extenstion = [".xlsx"]
+
+    if os.path.exists(base_path):
+
+        # Check to see if the argument is a directory
+        if os.path.isdir(base_path):
+            print(f"Processing Root Directory: \n\t{base_path}")
+            dir_list, total_dirs = read_files_in_dir(base_path, valid_file_extenstion)
+
+            region_dir = os.path.join(base_path, region)
+            print("Regional Directory is {}".format(region_dir))
+
+            dir_list, total_dirs = read_files_in_dir(region_dir, valid_file_extenstion)
+
+            #  Find each site in the specified region
+            for site_dir in total_dirs:
+
+                if disamabig_dir:
+                    if re.match(disamabig_dir, site_dir):
+                        # PATH to Root directory of Site
+                        site_path = os.path.join(region_dir, site_dir)
+                        print(f"\tFound site number {siteid} in site directory {site_path}\n")
+                else:
+                    # If this is the site we want to process:
+                    if re.match(siteid, site_dir):
+
+                        # PATH to Root directory of Site
+                        site_path = os.path.join(region_dir, site_dir)
+                        print(f"\tFound site number {siteid} in site directory {site_path}\n")
+
+    return site_path
 
 
 def replace_space(text, debug=False):
@@ -114,6 +252,29 @@ def create_cat_devobj_from_json_list(dev):
     return dev_obj
 
 
+def get_show_cmds_parsed(dev, outdir, shcmd, debug=False):
+
+    print(f"\n\n==== Device {dev} getting command {shcmd}")
+
+    fn = "show_cmds.yml"
+    cmd_dict = read_yaml(fn)
+    devdict = create_cat_devobj_from_json_list(dev)
+
+    print(f'devdict is {devdict}')
+
+    if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
+        resp = conn_and_get_output_parsed(devdict, shcmd)
+        # print(resp)
+        output_dir = os.path.join(os.getcwd(), outdir, f"{dev}_{shcmd.replace(' ', '_')}.json")
+        print(f"Saving JSON to {output_dir}")
+        with open(output_dir, 'w') as f:
+            json.dump(resp, f, indent=4)
+    else:
+        print(f"\n\n\txxx Skip Device {dev} Type {devdict['device_type']}")
+
+    return resp
+
+
 def read_yaml(filename):
     with open(filename) as f:
         data = yaml.load(f, Loader=yaml.FullLoader)
@@ -137,7 +298,7 @@ def write_txt(filename, data):
 
 
 def sub_dir(output_subdir, debug=False):
-    # Create target Directory if don't exist
+    # Create target Directory if does not exist
     if not os.path.exists(output_subdir):
         os.mkdir(output_subdir)
         print("Directory ", output_subdir, " Created ")
@@ -167,6 +328,29 @@ def conn_and_get_output(dev_dict, cmd_list, debug=False):
     return response
 
 
+def conn_and_get_output_parsed(dev_dict, cmd, debug=False):
+
+    os.environ["NET_TEXTFSM"] = "./ntc-templates/templates"
+
+    response = ""
+    try:
+        net_connect = netmiko.ConnectHandler(**dev_dict)
+    except netmiko.ssh_exception.NetmikoTimeoutException:
+        print(f"Cannot connect to device {dev_dict['ip']}. Connection Timed Out!")
+    except netmiko.ssh_exception.NetMikoAuthenticationException:
+        print(f"Cannot connect to device {dev_dict['ip']}. Authentication Exception!")
+
+    if debug:
+        print(f"--- Show Command: {cmd}")
+    try:
+        output = net_connect.send_command(cmd.strip(), use_textfsm=True)
+    except Exception as e:
+        print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
+        print(f"{e}\n")
+
+    return output
+
+
 def get_all_file_paths(directory):
     # initializing empty file paths list
     file_paths = []
@@ -187,6 +371,7 @@ def get_files_in_dir(directory, ext=".txt", debug=False):
     # Initialise list of files
     file_list = []
 
+    if debug: print(f"in get_files_in_dir with {directory} and extension {ext}")
     # Make sure extension has leading dot
     if not re.match(r'.',ext):
         ext = "." + ext
@@ -411,6 +596,346 @@ def ping_device(ip, debug=False):
         pings = True
 
     return pings
+
+
+def open_file(filename, mode="r", encoding="utf-8", debug=False):
+
+    """
+
+    General Utility to safely open a file.
+
+    encoding="utf-8"
+
+    :param filename:  file to open
+    :param mode: mode in which to open file, defaults to read
+    :return:  file handle
+
+    """
+
+    if debug: print(f"in open_file function in cat_config_utils module with filename {filename} and mode as {mode}")
+
+    file_handle = ''
+    # Mode = r | w | a | r+
+    try:
+        file_handle = open(filename, mode, encoding=encoding, errors='ignore')
+
+    except IOError:
+        print("IOError" + str(IOError))
+        print(f"open_file() function could not open file with mode {mode} in given path {path}"
+              f"\nPlease make sure all result files are closed!")
+
+    return file_handle
+
+
+def open_read_file(filename, mode="r"):
+
+    file_handle = ''
+    file_contents = ''
+
+    # Mode = r | w | a | r+
+    try:
+        file_handle = open(filename, mode)
+
+        # Read the file contents into a variable for parsing
+        file_contents = file_handle.read()
+        # Close file
+        file_handle.close()
+
+
+    except IOError:
+        print("IOError" + str(IOError))
+        print("Could not open file. Please make sure all result files are closed!")
+
+    return file_handle, file_contents
+
+
+def fsm_process_string(arg_dict, debug=False):
+
+    if debug:
+        print(arg_dict)
+        print(arg_dict.keys())
+
+    # Mandatory argument passed to script - either a filename or a directory of files to process
+    path = arg_dict['filename_or_dir']
+
+    textfsm_template = os.path.join(".", "ntc-templates", "templates", arg_dict['fsm_template'])
+    if debug: print(f"\nUsing TextFSM Template: {textfsm_template}\n")
+
+    # Split filename from path (if any)
+    tfsm_dir = os.path.dirname(textfsm_template)
+    tfsm_fn = os.path.basename(textfsm_template)
+
+    # set the template name (without extension) to use in results file name
+    textfsm_name = os.path.splitext(tfsm_fn)[0]
+
+    # Set table as False so if you don't get anything back from from parsing you can exit gracefully
+    table = False
+
+    # Keep a list of any files that did not have any output information
+    no_output = []
+
+    # Initialize list of all valid files
+    file_list = []
+    # Initialize list of valid parsing results
+    fsm_all_results = []
+
+    all_macaddr = []
+
+    # Parse Valid file extensions if they were provided as arguments
+    valid_file_extension = []
+    if arg_dict['extension']:
+        extensions = arg_dict['extension']
+        extensions = re.sub(r'\s+', '', extensions)
+        extensions = re.split(r'[;|,|\s]?', extensions)
+
+        for ext in extensions:
+            valid_file_extension.append(ext)
+    else:
+        valid_file_extension.append(".txt")
+        valid_file_extension.append(".log")
+
+    if os.path.exists(path):
+        # Check to see if the argument is a directory
+        if os.path.isdir(path):
+
+            file_list, total_files = read_files_in_dir(path, valid_file_extension)
+
+            if debug:
+                print("\nProcessing Directory: " + path + " for all files with the following extensions: " + str(valid_file_extension))
+                print(f"\t Total files in directory: {str(len(total_files))}")
+                print(f"\t Valid files in directory: {str(len(file_list))}\n")
+
+            path_list = os.path.basename(path)
+            results_fn = path_list + "_" + textfsm_name + "-results.csv"
+            results_dir = os.path.join(path, results_fn)
+            results_num_files = str(len(file_list))
+
+            # print(f"path is {path}")
+            # print(f"path_list is {path_list}")
+            # print(f"results_fn is {results_fn}")
+
+        else:
+            if debug: print("Processing File: " + path)
+            file_list.append(path)
+            fn, fext = os.path.splitext(path)
+            results_fn = fn + "_" + textfsm_name + "-results.csv"
+            curr_dir = os.getcwd()
+            results_dir = os.path.join(os.path.basename(curr_dir), results_fn)
+            results_num_files = '1'
+
+    else:
+        print("Problem with path or filename! {}".format(path))
+        sys.exit("Aborting Program Execution due to bad file or directory argument.")
+
+    # Make sure we have files to process (at least 1)
+    if len(file_list) > 0:
+
+        # Open the CSV file to store results
+        csv_results_fh = gen_utils.open_file(results_dir, 'w')
+        csv_writer = csv.writer(csv_results_fh, quoting=csv.QUOTE_MINIMAL)
+
+        # Iterate through the valid file list. If the script was passed a filename it will be a file_list of 1
+        # If the script was passed a directory it will be a list of files with a valid extension
+        for fil in file_list:
+
+            _ = os.path.basename(fil)
+            hostname_from_fn = _.split('.')[0]
+
+            if debug: print(f"\nProcessing device file: {_} with derived hostname {hostname_from_fn}\n")
+
+            # open_file function returns a file handle for the show command file
+            fh = gen_utils.open_file(fil, 'r')
+
+            full_output = gen_utils.load_shcmd_lines(fil)
+            show_run_output = gen_utils.get_show_section(full_output,arg_dict['string_start'],arg_dict['string_end'],
+                                                         debug=False)
+
+            if len(show_run_output) > 0:
+                if "!---" in show_run_output[0]:
+                    show_run_output.pop(0)
+
+            output_string = gen_utils.list_to_str(show_run_output)
+            # print(fil)
+            # print(output_string)
+
+            table = textfsm_utility.text_fsm_parse(textfsm_template, gen_utils.list_to_str(show_run_output))
+            fil_results = table._result
+
+            # Send TextFSM Template name and data to parse to text_fsm_parsing function
+            # file_results returns the table
+            # table = textfsm_utility.text_fsm_parse(textfsm_template, file_contents)
+            fil_results = table._result
+
+            # for line in fil_results:
+            #     print(line)
+            # print(len(fil_results))
+            # print(table)
+            # print(dir(table))
+            # print(fil_results)
+
+            # Keep track of files without parser output in the no_output list so it can be printed later
+            if len(fil_results) == 0:
+                no_output.append(fil)
+            else:
+                # Add derived hostname
+                for line in fil_results:
+                    line.append(hostname_from_fn)
+                # print(fil_results)
+                # Append fil_results list of results to list of all results
+                fsm_all_results.append(fil_results)
+
+        # Write the header row in the CSV file
+        header_row = table.header
+        header_row.append("DERIVED_HOSTNAME")
+        # print(f"\nTable Header: {table.header}")
+        # print(f"\nHeader Row: {header_row}")
+        table.header.append("Source_File_directory")
+        if table:
+            csv_writer.writerow(header_row)
+        else:
+            sys.exit("Parsing Error. Execution aborted.")
+
+        # Write each row in the fsm_all_results list to the CSV file
+        for re_row in fsm_all_results:
+            for single_row in re_row:
+                single_row.append(path)
+                all_macaddr.append(single_row)
+                csv_writer.writerow(single_row)
+
+    return fsm_all_results, all_macaddr, textfsm_name, hostname_from_fn, table
+
+
+def text_fsm_parse(template_fn, data, debug=False):
+
+    # Run the text through the FSM.
+    # The argument 'template' is a file handle and 'raw_text_data' is a
+    # string with the content from the show_inventory.txt file
+    # print(data)
+    template = open(template_fn)
+    re_table = textfsm.TextFSM(template)
+    fsm_results = re_table.ParseText(data)
+
+    if debug:
+        print("===== in text_fsm_parse function")
+        print(dir(re_table))
+        print(type(re_table))
+        print(re_table.header)
+        print(re_table._result)
+        print(re_table.values)
+        print(re_table.value_map)
+        print("="*20)
+
+    return re_table
+
+
+def process_file_section(arg_dict, debug=False):
+
+    if debug:
+        print("In process_file_section function...")
+        print(f"\tProcessing file with data \n{arg_dict}")
+
+    # ### Extract Section
+    full_output = load_shcmd_lines(arg_dict['filename_or_dir'])
+    show_run_output = get_show_section(full_output, arg_dict['string_start'], arg_dict['string_end'], debug=False)
+
+    # if len(show_run_output) > 0:
+    #     if "!---" in show_run_output[0]:
+    #         show_run_output.pop(0)
+
+    output_string = list_to_str(show_run_output)
+    if debug:
+        print(arg_dict['filename_or_dir'])
+        print(output_string)
+        print(f"full_output \n{full_output}")
+
+    textfsm_template = os.path.join(".", "ntc-templates", "templates", arg_dict['fsm_template'])
+    table = text_fsm_parse(textfsm_template, output_string)
+    fil_results = table._result
+
+    return fil_results
+
+
+def list_to_str(list_of_lines, debug=False):
+    """
+    Used when a file is read in via readlines() resulting in a list of lines
+    and you need to put it back into a single string variable
+    Typically used with CiscoConfParse
+
+    Example:
+    parsed = ciscoconfparse.CiscoConfParse(save_file("temp_text.txt", text_output))
+
+    :param list_of_lines:
+    :param debug:
+    :return:
+    """
+    # ciscoconfparse wants a file so we have to rebuild the text in text_output and pass the parse command a file
+    text_output = ""
+    for line in list_of_lines:
+        text_output = text_output + line
+    if debug: print(text_output)
+
+    return text_output
+
+
+def load_shcmd_lines(filepath):
+    """
+    Read file into list of lines
+    :param filepath:
+    :return:
+    """
+
+    with open(filepath, "r") as f:
+        file_contents = f.readlines()
+    # print(len(file_contents))
+    # print(file_contents)
+    return file_contents
+
+
+def get_show_section(lines_of_text, start_string, end_string, debug=False):
+    """
+    Given a file of many show commands, extract out a specific section
+
+    :param lines_of_text:
+    :param start_string:
+    :param end_string:
+    :param debug:
+    :return:
+    """
+
+    shrun_lines = []
+    in_show = False
+    for line in lines_of_text:
+        if re.search(start_string, line):
+            in_show = True
+
+        if in_show:
+            shrun_lines.append(line)
+
+        if re.search(end_string, line):
+            in_show = False
+
+    if len(shrun_lines) > 0:
+        shrun_lines.pop()
+
+    if debug:
+        print(f"From get_show_section Function:")
+        print(shrun_lines)
+        print(len(shrun_lines))
+    return shrun_lines
+
+
+def get_hostname_from_filename(fn, debug=False):
+
+    filenm = os.path.basename(fn)
+
+    # _ = filenm.split('.net.cat.com.show-commands.txt')
+    _ = filenm.split('.')
+    if debug: print(f"in get_hostname_from_filename, split is {_}")
+    hname = _[0]
+
+    return hname
+
+
 
 
 def main():
