@@ -28,7 +28,7 @@ def get_list_of_nei(dev_fqdn, root_dev, debug=False):
 
     # Use full show command for parsing to work!!
     response = utils.get_show_cmd_parsed(
-        dev_fqdn, "show cdp neighbors detail", save_2json=False, debug=True
+        dev_fqdn, "show cdp neighbors detail", save_2json=False, debug=False
     )
     # Returns a list of dictionaries
     ic(dev_fqdn)
@@ -69,16 +69,13 @@ def get_list_of_nei(dev_fqdn, root_dev, debug=False):
 def main():
 
     datestamp = datetime.date.today()
-    print(f"===== Date is {datestamp} ====")
+    print(f"========== Date is {datestamp} =========")
 
     # Load Credentials from environment variables
     dotenv.load_dotenv(verbose=False)
 
     usr_env = add_2env.check_env("NET_USR")
     pwd_env = add_2env.check_env("NET_PWD")
-    #
-    #     # print(usr_env)
-    #     # print(pwd_env)
 
     if not usr_env["VALID"] and not pwd_env["VALID"]:
         add_2env.set_env()
@@ -86,9 +83,11 @@ def main():
         # sensitive option to true so that the password can be typed in securely without echo to the screen
         add_2env.set_env(desc="Password", sensitive=True)
 
+    # Get Show Command Dictionary
     fn = "show_cmds.yml"
     cmd_dict = utils.read_yaml(fn)
 
+    print(f"========== GET NEIGHBORS FROM SEED DEVICE {arguments.seed_device_fqdn} ==========")
     seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn)
     ic(seed_dict)
     ic(seed_dict.keys())
@@ -108,8 +107,16 @@ def main():
     seed_dict.update(level1_dict)
     ic(seed_dict)
 
-    x = list(seed_dict.keys())
-    ic(x)
+    list_of_devices = list(seed_dict.keys())
+
+    region, cntry, site_id, location, site_type = utils.parse_cat_hostname(arguments.seed_device_fqdn)
+    ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
+    json_dir = "site_json"
+    json_fn = f"{site_id}_auto_devlist.json"
+    json_fp = os.path.join(os.getcwd(), json_dir, json_fn)
+
+    utils.save_json(json_fp, list_of_devices, debug=True)
+
 
 
 # Standard call to the main() function.

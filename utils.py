@@ -299,6 +299,14 @@ def read_json(filename, debug=False):
     return data
 
 
+def save_json(filename, data, debug=False):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
+    if debug:
+        print(f"\n...in the read_json function in utils.py")
+        print(f"saved data to {filename}")
+
+
 def write_txt(filename, data):
     with open(filename, "w") as f:
         f.write(data)
@@ -342,7 +350,7 @@ def conn_and_get_output_parsed(dev_dict, cmd, debug=False):
 
     response = ""
     output = ""
-    ic(dev_dict)
+    if debug: ic(dev_dict)
     try:
         net_connect = netmiko.ConnectHandler(**dev_dict)
     except netmiko.ssh_exception.NetmikoTimeoutException:
@@ -358,7 +366,8 @@ def conn_and_get_output_parsed(dev_dict, cmd, debug=False):
         print(f"Cannot execute command {cmd} on device {dev_dict['ip']}.")
         print(f"{e}\n")
 
-    ic(output)
+    if debug: ic(output)
+
     return output
 
 
@@ -946,6 +955,89 @@ def get_hostname_from_filename(fn, debug=False):
 
     return hname
 
+
+def parse_cat_hostname(filenamex, debug=False):
+    """
+    Parse Cat hostname (based on show command filename which should equal hostname)
+    :param filename:
+    :param debug:
+    :return:
+    """
+
+    filename = os.path.basename(filenamex)
+
+    # Check to see if Region was set in CLI otherwise attempt to derive from filename
+    region = re.search(r"(na|ap|ea|la)", filename)
+    rr = check_re_search(region)
+    # Check to see if Country was set in CLI otherwise attempt to derive from filename
+
+    country = re.search(r"^(na|la|ap|ea)-\w{2}-", filename)
+    if country:
+        if country.group():
+            _ = country.group().split("-")
+            if len(_) >= 2:
+                cc = _[1]
+    else:
+        cc = "TBD"
+
+    # Check to see if SiteID was set in CLI otherwise attempt to derive from filename
+    site = re.search(r"^(na|la|ap|ea)-\w{2}-\d{2,4}", filename)
+    if site:
+        if site.group():
+            _ = site.group().split("-")
+            if len(_) >= 3:
+                siteid = _[2]
+    else:
+        siteid = "TBD"
+
+    # Check to see if Building (City, Bldg) was set in CLI otherwise attempt to derive from filename
+
+    bldg = re.search(r"^(na|la|ap|ea)-\w{2}-\d{2,4}-\w+-",filename)
+    if bldg:
+        if bldg.group():
+            _ = bldg.group().split("-")
+            if len(_) >= 4:
+                loc = _[3]
+    else:
+        loc = "TBD"
+
+    if re.search(r'-cs0\d', filename):
+        sitetype = "Large"
+    elif re.search(r'-ds0\d', filename):
+        sitetype = f"Large > Specific Distribution {loc.upper()}"
+    elif re.search(r'-cds0\d', filename):
+        sitetype = "Medium"
+    elif re.search(r'-as0\d', filename):
+        sitetype = "Access"
+    else:
+        sitetype = "Undefined SiteType"
+
+    if debug:
+        print(f"====== Parsing Hostname {filename}")
+        print(f"REGION is {rr}")
+        print(f"COUNTRY is {cc}")
+        print(f"SITE ID is {siteid}")
+        print(f"BUILDING or LOCATION is {loc}")
+        print(f"SITE TYPE is {sitetype}")
+    return rr, cc, siteid, loc, sitetype
+
+
+def check_re_search(reobj, else_txt="TBD"):
+    """
+    Used to check the results of re.search
+    Used to parse a Cat hostname
+    :param reobj:
+    :param else_txt:
+    :return:
+    """
+
+    if reobj:
+        if reobj.group():
+            xx = reobj.group().lstrip("-")
+    else:
+        xx = else_txt
+
+    return xx
 
 
 
