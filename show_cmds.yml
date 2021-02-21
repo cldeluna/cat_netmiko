@@ -73,3 +73,16 @@ pre_post_commands:
   - show interface trunk
   - show span
   - show interface status
+staging_commands:
+  - term Len 0
+  - show running-config
+  - show startup-config
+  - show inventory
+  - show int status
+  - show interface
+  - show version
+  - show swi
+  - show swi detail
+  - show swi stack-ports
+  - show swi stack-mode
+  - dir
