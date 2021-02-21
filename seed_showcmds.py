@@ -22,8 +22,28 @@ import datetime
 import shutil
 import json
 
-def some_function():
-    pass
+def get_list_of_nei(dev, root_dev):
+
+    # Use full show command for parsing to work!!
+    response = utils.get_show_cmds_parsed(dev, arguments.output_subdir, "show cdp neighbors detail")
+    # Returns a list of dictionaries
+
+    device_lod = []
+    filter_regex_list = r'.+WS-'
+    for line in response:
+        tmpd = dict()
+
+        if re.search(filter_regex_list, line['platform']):
+
+            tmpd.update({
+                'fqdn': line['destination_host'],
+                'mgmt_ip': line['management_ip'],
+                'platform': line['platform']
+
+            })
+            device_lod.append(tmpd)
+
+    print(json.dumps(device_lod, indent=4))
 
 
 def main():
@@ -53,26 +73,7 @@ def main():
     #     # print(devdict)
 
     dev = "10.1.10.212"
-    # Use full show command for parsing to work!!
-    response = utils.get_show_cmds_parsed(dev, arguments.output_subdir, "show cdp neighbors detail")
-    # Returns a list of dictionaries
 
-    device_lod = []
-    filter_regex_list = r'.+WS-'
-    for line in response:
-        tmpd = dict()
-
-        if re.search(filter_regex_list, line['platform']):
-
-            tmpd.update({
-                'fqdn': line['destination_host'],
-                'mgmt_ip': line['management_ip'],
-                'platform': line['platform']
-
-            })
-            device_lod.append(tmpd)
-
-    print(json.dumps(device_lod, indent=4))
 
 # Standard call to the main() function.
 if __name__ == '__main__':
