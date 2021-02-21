@@ -89,35 +89,36 @@ def main():
 
     print(f"========== GET NEIGHBORS FROM SEED DEVICE {arguments.seed_device_fqdn} ==========")
     seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn)
-    ic(seed_dict)
-    ic(seed_dict.keys())
+    # ic(seed_dict)
+    # ic(seed_dict.keys())
 
     level1_list = []
     for dev in seed_dict.keys():
-        print(f"\n\n---- Attempting Level 1 connections....")
+        print(f"\n\n------------------ Level 1 Processing Starting ------------------")
         print(f"\t- Level 1 connection to {seed_dict[dev]}....")
         level1_dict = get_list_of_nei(
             seed_dict[dev]["fqdn"], arguments.seed_device_fqdn, debug=False
         )
-    print(f"==================")
-    print(json.dumps(level1_dict))
+    print(f"------------------ Level 1 Processing Complete ------------------")
+    # print(json.dumps(level1_dict))
 
-    ic(seed_dict)
-    ic(level1_dict)
+    # ic(seed_dict)
+    # ic(level1_dict)
     seed_dict.update(level1_dict)
     ic(seed_dict)
 
+    # The keys build the json dev list used by the other scripts in this repo
     list_of_devices = list(seed_dict.keys())
 
     region, cntry, site_id, location, site_type = utils.parse_cat_hostname(arguments.seed_device_fqdn)
-    ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
+    # ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
     json_dir = "site_json"
     json_fn = f"{site_id}_auto_devlist.json"
     json_fp = os.path.join(os.getcwd(), json_dir, json_fn)
 
-    utils.save_json(json_fp, list_of_devices, debug=True)
+    utils.save_json(json_fp, list_of_devices, debug=False)
 
-
+    print(f"\nDevice List saved at {json_fp}\n\n")
 
 # Standard call to the main() function.
 if __name__ == "__main__":
