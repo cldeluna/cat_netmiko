@@ -104,9 +104,9 @@ def set_base_by_user(base_override='', debug=False):
         elif re.search('root', user, re.IGNORECASE):
             # MacBookPro 13 in
             # /Users/Claudia/Dropbox (Indigo Wire Networks)/CAT_NetMon_Project/
-            # base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "CAT_NetMon_Project")
+            base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "CAT_NetMon_Project")
             # /Users/claudia/Dropbox (Indigo Wire Networks)/Cat_Software_Upgrades/
-            base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "Cat_Software_Upgrades")
+            # base_path = os.path.join("/Users", "Claudia", "Dropbox (Indigo Wire Networks)", "Cat_Software_Upgrades")
 
 
 
@@ -1038,6 +1038,58 @@ def check_re_search(reobj, else_txt="TBD"):
         xx = else_txt
 
     return xx
+
+
+def get_valid_int_input(prompt, max_value=10):
+    while True:
+        try:
+            value = int(input(prompt))
+        except ValueError:
+            print("Sorry, I didn't understand that.")
+            continue
+
+        if value < 0:
+            print("Sorry, your response must not be negative.")
+            continue
+        elif value >= max_value:
+            print(f"Sorry, the value you entered is invalid. Please enter a value between 0 and {max_value}.")
+            continue
+        else:
+            break
+    return value
+
+
+def generic_select_dir(base, input_str, debug=False):
+
+    """
+    From a list of directories or files for a site select the directory or file that has the show commands you need.
+
+    :param base: This is the root directory for the site
+    :return: The full path to the directory or file selected i
+
+    """
+
+    selected_file_list = []
+
+    file_list, total_files = read_files_in_dir(base, '')
+    if debug:
+        print(file_list)
+        print(total_files)
+
+    # Display all the directories available for selection
+    for item in total_files:
+        print("{}: {}".format(total_files.index(item), item))
+
+    dir_num = get_valid_int_input(f"Select {input_str}: ", max_value=len(total_files))
+
+    selected_path = os.path.join(base,total_files[int(dir_num)])
+
+    if debug:
+        print(f"\nSelected path is {selected_path} and is valid [{os.path.isdir(selected_path)}]")
+
+    # Return the directory path and a list of files
+    return selected_path
+
 
 
 
