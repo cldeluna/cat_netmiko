@@ -247,6 +247,8 @@ def create_cat_devobj_from_json_list(dev):
         # dev_obj.update({'secret': 'A123m!'})
     elif re.search('10.1.10.', dev, re.IGNORECASE) or re.search('1.1.1.', dev, re.IGNORECASE):
         dev_obj.update({'device_type': 'cisco_ios'})
+    elif re.search('10.', dev, re.IGNORECASE):
+        dev_obj.update({'device_type': 'cisco_ios'})
     else:
         dev_obj.update({'device_type': 'unknown'})
 
