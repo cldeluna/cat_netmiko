@@ -39,26 +39,28 @@ def get_list_of_nei(dev_fqdn, root_dev, debug=False):
     for line in response:
         ic(line)
         ic(dev_fqdn)
-        # Ignore connections to self
-        if line["destination_host"] != dev_fqdn:
 
-            # Only interested in devices that are downstream not upstream to root device
-            # if not re.search(root_dev, line['destination_host']):
+        if line:
+            # Ignore connections to self
+            if line["destination_host"] != dev_fqdn:
 
-            tmpd = dict()
+                # Only interested in devices that are downstream not upstream to root device
+                # if not re.search(root_dev, line['destination_host']):
 
-            if re.search(filter_regex_list, line["platform"]):
+                tmpd = dict()
 
-                tmpd.update(
-                    {
-                        "fqdn": line["destination_host"],
-                        "mgmt_ip": line["management_ip"],
-                        "platform": line["platform"],
-                    }
-                )
+                if re.search(filter_regex_list, line["platform"]):
 
-                if line["destination_host"] not in devices_dict.keys():
-                    devices_dict.update({line["destination_host"]: tmpd})
+                    tmpd.update(
+                        {
+                            "fqdn": line["destination_host"],
+                            "mgmt_ip": line["management_ip"],
+                            "platform": line["platform"],
+                        }
+                    )
+
+                    if line["destination_host"] not in devices_dict.keys():
+                        devices_dict.update({line["destination_host"]: tmpd})
 
     if debug:
         print(json.dumps(devices_dict, indent=4))
