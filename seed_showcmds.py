@@ -39,6 +39,7 @@ def get_list_of_nei(dev_fqdn, root_dev, debug=False):
     for line in response:
         ic(line)
         ic(dev_fqdn)
+        print(f"\nline is {line}")
 
         if line:
             # Ignore connections to self
