@@ -124,6 +124,7 @@ def main():
     #     print(f"-- {line}")
 
     # ###################### START LEVEL 2 PROCESSING
+    level2_dict = {}
     print(f"\n\n\t------------------ Level 2 Processing Starting ------------------")
     print(f"\n\t\tLook for nested switches in these devices:")
     for k in level1_dict.keys():
