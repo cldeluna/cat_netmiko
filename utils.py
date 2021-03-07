@@ -255,9 +255,14 @@ def create_cat_devobj_from_json_list(dev):
     return dev_obj
 
 
-def get_show_cmd_parsed(dev, shcmd, save_2json=False, debug=False):
+def get_show_cmd_parsed(dev, shcmd, save_2json=False, level=0, debug=False):
 
-    print(f"\n\n==== Device {dev} getting command {shcmd}")
+    if level == 0:
+        print(f"\n\n==== Device {dev} getting command {shcmd}")
+    elif level == 1:
+        print(f"\n\t\t--- Device {dev} getting command {shcmd}")
+    elif level == 2:
+        print(f"\n\t\t\t- Device {dev} getting command {shcmd}")
 
     outdir = 'local'
 
