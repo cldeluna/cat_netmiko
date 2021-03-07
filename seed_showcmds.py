@@ -63,7 +63,11 @@ def get_list_of_nei(dev_fqdn, root_dev, level=0, debug=False):
                 if line["destination_host"] not in devices_dict.keys():
                     devices_dict.update({line["destination_host"]: tmpd})
 
-        else:
+        if line["destination_host"] == dev_fqdn:
+            if debug:
+                print(f"line is {line['destination_host']}")
+                print(f"dev_fqnd is {dev_fqdn}")
+
             root_dict = dict()
 
             if re.search(filter_regex_list, line["platform"]):
@@ -76,9 +80,9 @@ def get_list_of_nei(dev_fqdn, root_dev, level=0, debug=False):
                     }
                 )
 
-
     if debug:
         print(json.dumps(devices_dict, indent=4))
+        print(f"root_dict is \n{root_dict}")
 
     return devices_dict, root_dict
 
@@ -105,7 +109,7 @@ def main():
     cmd_dict = utils.read_yaml(fn)
 
     print(f"========== GET NEIGHBORS FROM SEED DEVICE {arguments.seed_device_fqdn} ==========")
-    seed_dict, seed_dev_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn, level=0)
+    seed_dict, seed_dev_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn, level=0, debug=True)
 
     # ic(seed_dict)
     # ic(seed_dict.keys())
