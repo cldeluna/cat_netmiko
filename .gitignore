@@ -10,5 +10,6 @@ local*
 Log*.txt
 *.log
 ntc-templates
+*.txt
 
 
