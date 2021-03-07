@@ -33,6 +33,7 @@ def get_list_of_nei(dev_fqdn, root_dev, level=0, debug=False):
     # Returns a list of dictionaries
     # ic(dev_fqdn)
     devices_dict = dict()
+    root_dict = dict()
     filter_regex_list = r".+(WS-)?C\d{4}"
 
     # For every neighbor found weed out connections to self and connections to upstream root device
@@ -62,12 +63,24 @@ def get_list_of_nei(dev_fqdn, root_dev, level=0, debug=False):
                 if line["destination_host"] not in devices_dict.keys():
                     devices_dict.update({line["destination_host"]: tmpd})
 
+        else:
+            root_dict = dict()
+
+            if re.search(filter_regex_list, line["platform"]):
+
+                root_dict.update(
+                    {
+                        "fqdn": line["destination_host"],
+                        "mgmt_ip": line["management_ip"],
+                        "platform": line["platform"],
+                    }
+                )
 
 
     if debug:
         print(json.dumps(devices_dict, indent=4))
 
-    return devices_dict
+    return devices_dict, root_dict
 
 
 def main():
@@ -92,7 +105,7 @@ def main():
     cmd_dict = utils.read_yaml(fn)
 
     print(f"========== GET NEIGHBORS FROM SEED DEVICE {arguments.seed_device_fqdn} ==========")
-    seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn, level=0)
+    seed_dict, seed_dev_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn, level=0)
 
     # ic(seed_dict)
     # ic(seed_dict.keys())
@@ -105,7 +118,7 @@ def main():
     for dev in seed_dict.keys():
 
         print(f"\n\t- Level 1 connection to {seed_dict[dev]}....")
-        level1_dict = get_list_of_nei(
+        level1_dict, _ = get_list_of_nei(
             seed_dict[dev]["fqdn"], arguments.seed_device_fqdn, level=1, debug=False
         )
     print(f"------------------ Level 1 Processing Complete ------------------")
@@ -134,7 +147,7 @@ def main():
     for dev in level1_dict.keys():
 
         print(f"\n\t\t- Level 2 connection to {level1_dict[dev]}....")
-        level2_dict = get_list_of_nei(
+        level2_dict, _ = get_list_of_nei(
             level1_dict[dev]["fqdn"], level1_dict[dev]["fqdn"], level=2, debug=False
         )
     print(f"\t------------------ Level 2 Processing Complete ------------------")
@@ -159,6 +172,7 @@ def main():
         print(f"\n\nOK! Seed device {arguments.seed_device_fqdn} in devices dictionary.")
     else:
         print(f"\n\nWARNING!!!!!! Seed device {arguments.seed_device_fqdn} NOT in devices dictionary.")
+        seed_dict.update(seed_dev_dict)
 
     region, cntry, site_id, location, site_type = utils.parse_cat_hostname(arguments.seed_device_fqdn)
     # ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
