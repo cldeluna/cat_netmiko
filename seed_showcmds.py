@@ -158,13 +158,6 @@ def main():
     seed_dict.update(level2_dict)
     # ic(seed_dict)
 
-    # The keys build the json dev list used by the other scripts in this repo
-    list_of_devices = list(seed_dict.keys())
-
-    print(f"\n************* printing Level 1 list of devices with {len(list_of_devices)} devices")
-    for line in level1_dict:
-        print(f"-- {line}")
-
     # ###################### END LEVEL 2 PROCESSING
 
     # FINAL CHECK
@@ -172,7 +165,11 @@ def main():
         print(f"\n\nOK! Seed device {arguments.seed_device_fqdn} in devices dictionary.")
     else:
         print(f"\n\nWARNING!!!!!! Seed device {arguments.seed_device_fqdn} NOT in devices dictionary.")
+        print(f"{seed_dev_dict}")
         seed_dict.update(seed_dev_dict)
+
+    # The keys build the json dev list used by the other scripts in this repo
+    list_of_devices = list(seed_dict.keys())
 
     region, cntry, site_id, location, site_type = utils.parse_cat_hostname(arguments.seed_device_fqdn)
     # ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
