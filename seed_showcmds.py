@@ -24,21 +24,21 @@ import json
 from icecream import ic
 
 
-def get_list_of_nei(dev_fqdn, root_dev, debug=False):
+def get_list_of_nei(dev_fqdn, root_dev, level=0, debug=False):
 
     # Use full show command for parsing to work!!
     response = utils.get_show_cmd_parsed(
-        dev_fqdn, "show cdp neighbors detail", save_2json=False, debug=False
+        dev_fqdn, "show cdp neighbors detail", save_2json=False, level=level, debug=False
     )
     # Returns a list of dictionaries
-    ic(dev_fqdn)
+    # ic(dev_fqdn)
     devices_dict = dict()
     filter_regex_list = r".+(WS-)?C\d{4}"
 
     # For every neighbor found weed out connections to self and connections to upstream root device
     for line in response:
-        ic(line)
-        ic(dev_fqdn)
+        # ic(line)
+        # ic(dev_fqdn)
         # print(f"\nline is {line}")
 
         # Ignore connections to self
@@ -61,6 +61,8 @@ def get_list_of_nei(dev_fqdn, root_dev, debug=False):
 
                 if line["destination_host"] not in devices_dict.keys():
                     devices_dict.update({line["destination_host"]: tmpd})
+
+
 
     if debug:
         print(json.dumps(devices_dict, indent=4))
@@ -90,16 +92,21 @@ def main():
     cmd_dict = utils.read_yaml(fn)
 
     print(f"========== GET NEIGHBORS FROM SEED DEVICE {arguments.seed_device_fqdn} ==========")
-    seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn)
+    seed_dict = get_list_of_nei(arguments.seed_device_fqdn, arguments.seed_device_fqdn, level=0)
+
     # ic(seed_dict)
     # ic(seed_dict.keys())
 
-    level1_list = []
+    print(f"\n\n------------------ Level 1 Processing Starting ------------------")
+    # level1_list = []
+    print(f"\n\tLook for nested switches in these devices:")
+    for k in seed_dict.keys():
+        print(f"\t* {k}")
     for dev in seed_dict.keys():
-        print(f"\n\n------------------ Level 1 Processing Starting ------------------")
-        print(f"\t- Level 1 connection to {seed_dict[dev]}....")
+
+        print(f"\n\t- Level 1 connection to {seed_dict[dev]}....")
         level1_dict = get_list_of_nei(
-            seed_dict[dev]["fqdn"], arguments.seed_device_fqdn, debug=False
+            seed_dict[dev]["fqdn"], arguments.seed_device_fqdn, level=1, debug=False
         )
     print(f"------------------ Level 1 Processing Complete ------------------")
     # print(json.dumps(level1_dict))
@@ -107,10 +114,50 @@ def main():
     # ic(seed_dict)
     # ic(level1_dict)
     seed_dict.update(level1_dict)
-    ic(seed_dict)
+    # ic(seed_dict)
 
     # The keys build the json dev list used by the other scripts in this repo
     list_of_devices = list(seed_dict.keys())
+    #
+    # print(f"\n************* printing Level 1 list of devices with {len(list_of_devices)} devices")
+    # for line in level1_dict:
+    #     print(f"-- {line}")
+
+    # ###################### START LEVEL 2 PROCESSING
+    print(f"\n\n\t------------------ Level 2 Processing Starting ------------------")
+    print(f"\n\t\tLook for nested switches in these devices:")
+    for k in level1_dict.keys():
+        print(f"\t\t* {k}")
+
+    # level2_list = []
+    for dev in level1_dict.keys():
+
+        print(f"\n\t\t- Level 2 connection to {level1_dict[dev]}....")
+        level2_dict = get_list_of_nei(
+            level1_dict[dev]["fqdn"], level1_dict[dev]["fqdn"], level=2, debug=False
+        )
+    print(f"\t------------------ Level 2 Processing Complete ------------------")
+    # print(json.dumps(level1_dict))
+
+    # ic(seed_dict)
+    # ic(level1_dict)
+    seed_dict.update(level2_dict)
+    # ic(seed_dict)
+
+    # The keys build the json dev list used by the other scripts in this repo
+    list_of_devices = list(seed_dict.keys())
+
+    print(f"\n************* printing Level 1 list of devices with {len(list_of_devices)} devices")
+    for line in level1_dict:
+        print(f"-- {line}")
+
+    # ###################### END LEVEL 2 PROCESSING
+
+    # FINAL CHECK
+    if arguments.seed_device_fqdn in seed_dict.keys():
+        print(f"\n\nOK! Seed device {arguments.seed_device_fqdn} in devices dictionary.")
+    else:
+        print(f"\n\nWARNING!!!!!! Seed device {arguments.seed_device_fqdn} NOT in devices dictionary.")
 
     region, cntry, site_id, location, site_type = utils.parse_cat_hostname(arguments.seed_device_fqdn)
     # ic(utils.parse_cat_hostname(arguments.seed_device_fqdn))
@@ -119,6 +166,9 @@ def main():
     json_fp = os.path.join(os.getcwd(), json_dir, json_fn)
 
     utils.save_json(json_fp, list_of_devices, debug=False)
+
+    json_dict = os.path.join(os.getcwd(), json_dir, f"{site_id}_auto_devdict.json")
+    utils.save_json(json_dict, seed_dict, debug=False)
 
     print(f"\nDevice List saved at {json_fp}\n\n")
 
