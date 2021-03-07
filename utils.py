@@ -278,7 +278,7 @@ def get_show_cmd_parsed(dev, shcmd, save_2json=False, level=0, debug=False):
 
     # if devdict['device_type'] in ['cisco_ios', 'cisco_nxos', 'cisco_wlc']:
     resp = conn_and_get_output_parsed(devdict, shcmd)
-    print(resp)
+    # print(resp)
     if save_2json:
         output_dir = os.path.join(os.getcwd(), outdir, f"{dev}_{shcmd.replace(' ', '_')}.json")
         print(f"Saving JSON to {output_dir}")
